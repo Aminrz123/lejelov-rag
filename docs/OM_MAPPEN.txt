@@ -13,8 +13,11 @@ graf_prompt_eksempel.txt
   Et eksempel på den besked (prompt), workflow 02 sender til Claude for hver paragraf,
   når den skal skrive Cypher til grafen.
 
-arkitektur.png og arkitektur.md
-  En tegning af hele systemet og en kort forklaring af, hvordan delene hænger sammen.
+arkitektur.png
+  En tegning af hele systemet. Den bruges i README'en.
 
-noter.txt
-  Mine noter undervejs: tal fra kørslerne og de fejl, jeg har fundet og rettet.
+eksempler.md
+  Tre spørgsmål, jeg har stillet agenten, med værktøjskald, svar og min vurdering.
+
+udviklingsprompts.txt
+  De prompts, jeg har brugt og rettet undervejs, og hvorfor jeg rettede dem.

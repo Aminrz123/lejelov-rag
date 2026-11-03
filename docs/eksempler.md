@@ -72,6 +72,10 @@ Screenshot: `screenshot workflows/ai svar eksempel.png`
 Værktøjet fejlede, fordi jeg endnu ikke havde valgt workflow 03 i tool-noden i n8n.
 Agenten fik derfor **ingen** lovtekst tilbage.
 
+Inputtet hedder `query` her, fordi det er sådan, det står i loggen fra dengang. På det
+tidspunkt var værktøjets inputfelt ikke sat op endnu. Nu hedder feltet `spoergsmaal`, som
+beskrevet i [agent/tools.txt](../agent/tools.txt).
+
 Screenshot: `screenshot workflows/eksempel 2 tool fejler.png`
 
 **Agentens svar (uddrag):**
