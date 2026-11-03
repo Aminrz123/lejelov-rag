@@ -6,30 +6,29 @@
         "workflowInputs": {
           "values": [
             {
-              "name": "spoergsmaal",
-              "type": "string"
+              "name": "spoergsmaal"
             }
           ]
         }
       },
-      "id": "v1",
+      "id": "17b32f45-d178-4fd2-a575-5c5c5970bda3",
       "name": "Kaldt af agenten",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        0,
-        200
+        -192,
+        -256
       ]
     },
     {
       "parameters": {},
-      "id": "v0",
+      "id": "bdadfe86-ec42-4680-9888-376bc093e2dc",
       "name": "Test",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        420
+        -192,
+        -32
       ]
     },
     {
@@ -46,13 +45,13 @@
         },
         "options": {}
       },
-      "id": "v2",
+      "id": "bd4b85a2-cb29-4245-9a72-3b22922a0cb4",
       "name": "Testspørgsmål",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        220,
-        420
+        32,
+        -32
       ]
     },
     {
@@ -64,49 +63,56 @@
         "jsonBody": "={{ JSON.stringify({ model: 'bge-m3', input: $json.spoergsmaal }) }}",
         "options": {}
       },
-      "id": "v3",
+      "id": "19a5bbcb-3af7-4869-ab8f-483359039045",
       "name": "Embed spørgsmål",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        440,
-        300
+        256,
+        -160
       ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ statement: \"CALL db.index.vector.queryNodes('stykke_embedding', $k, $embedding) YIELD node, score RETURN node.id AS id, node.paragraf AS paragraf, node.stk AS stk, node.kapitel AS kapitel, node.kapitel_titel AS kapitel_titel, node.overskrift AS overskrift, node.tekst AS tekst, node.kilde AS kilde, round(score, 3) AS score ORDER BY score DESC\", parameters: { embedding: $json.embeddings[0], k: 5 } }) }}",
-        "options": {},
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpBasicAuth"
+        "options": {}
       },
-      "id": "v4",
+      "id": "58e7cf97-bffe-49f9-8081-fb1a6d68cc54",
       "name": "Vektorsøgning i Neo4j",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        660,
-        300
-      ]
+        480,
+        -160
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zW4tIvz6KRJp3SVa",
+          "name": "Unnamed credential"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "// Gør Neo4j's svar læsbart for agenten: tekst + paragraf + kilde for hvert fund\nconst { fields, values } = $input.first().json.data;\nconst fund = values.map(v => Object.fromEntries(fields.map((f, i) => [f, v[i]])));\n\nif (!fund.length) {\n  return [{ json: { resultat: 'Ingen relevante stykker fundet i lejeloven.', fund: [] } }];\n}\n\nconst resultat = fund.map((r, i) => [\n  `[${i + 1}] Lejeloven § ${r.paragraf}, stk. ${r.stk}` +\n    ` (kapitel ${r.kapitel}: ${r.kapitel_titel}${r.overskrift ? ' – ' + r.overskrift : ''})` +\n    ` – relevans ${r.score}`,\n  r.tekst,\n  `Kilde: ${r.kilde}`,\n].join('\\n')).join('\\n\\n');\n\nreturn [{ json: { resultat, fund } }];\n"
       },
-      "id": "v5",
+      "id": "fcce2cc4-6bd1-46c6-92e0-ef3f3f21d4fb",
       "name": "Formatér resultat",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
-        300
+        688,
+        -160
       ]
     }
   ],
+  "pinData": {},
   "connections": {
     "Kaldt af agenten": {
       "main": [
@@ -164,5 +170,16 @@
       ]
     }
   },
-  "settings": {}
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6b867760-5cf7-4807-bf28-d3a43a2cd641",
+  "meta": {
+    "instanceId": "26121b5dcd0eadf7704ef232a55b5c9001e072aa1b762fa54d9c6c4e7a986594"
+  },
+  "nodeGroups": [],
+  "id": "30jYMoUVrKlnH2nK",
+  "tags": []
 }
