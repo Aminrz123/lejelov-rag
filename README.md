@@ -85,6 +85,14 @@ måde: model, instruktioner, guardrails og workflows som tools.
 | 04 Grafsøgning | Retrieval (graf): tool, der slår en paragraf, et emne eller en part op | [JSON](workflows/04_graf_soegning.json) | [billede](screenshots/workflows/04_graf_soegning.png) |
 | 05 Lejerådgiveren | Agenten: chat, Claude Haiku, hukommelse og de to tools | [JSON](workflows/05_lejeraadgiveren_agent.json) | [billede](screenshots/workflows/05_agent_tool_forbindelser.png) |
 
+## Extras
+
+- **Referencer:** Agenten slutter altid med "Kilder:", hvor den viser de paragraffer og
+  stykker, den har brugt, og linket til loven på Retsinformation.
+- **Chat-interface:** Agenten bruges gennem n8n's indbyggede chat (Chat-noden i workflow 05).
+
+Jeg har ikke brugt skills, fordi Agents builder ikke var tilgængelig i min n8n.
+
 ## Begrænsninger
 
 - Lovteksten er fra 2022, så senere ændringer er ikke med.
