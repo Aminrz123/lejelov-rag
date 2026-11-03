@@ -1,0 +1,15 @@
+screenshots
+===========
+
+Alle mine screenshots, sorteret efter hvad de viser.
+
+workflows/
+  Et billede af hvert af mine 5 n8n-workflows. Nummeret passer med JSON-filerne i
+  workflows/. Billede 05 viser også, hvordan agenten er koblet til sine værktøjer.
+
+neo4j/
+  Billeder fra Neo4j: oversigt over databasen, grafmodellen, en paragraf med sine
+  forbindelser, indexes og en vektorsøgning.
+
+eksempel_1/, eksempel_2/, eksempel_3/
+  Billeder til de tre eksempler i docs/eksempler.md: chatten, loggen og værktøjskaldene.

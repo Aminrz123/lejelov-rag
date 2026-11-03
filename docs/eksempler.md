@@ -6,12 +6,12 @@ hvad den svarede, og min vurdering af svaret.
 
 - **Eksempel 1** virker som det skal.
 - **Eksempel 2** viser en fejl: agenten gættede, da værktøjet fejlede.
-- **Eksempel 3** viser en begrænsning: agenten fulgte ikke alle henvisninger.
+- **Eksempel 3** viser en begrænsning: agenten fulgte ikke alle henvisninger og gav et for unuanceret svar.
 
 Jeg har sammenlignet de paragraffer, agenten citerer, med lovteksten i
 [data/lejeloven.pdf](../data/lejeloven.pdf).
 
-Screenshots ligger i [`screenshot workflows/`](../screenshot%20workflows/).
+Screenshots ligger i [`screenshots/`](../screenshots/), med én mappe pr. eksempel.
 
 ---
 
@@ -40,7 +40,7 @@ at finde relevante stykker og derefter grafsøgning, før den skrev svaret.
 > - **Renhold og belysning (§ 112, stk. 2):** …
 > - **God orden i ejendommen (§ 152, stk. 1):** …
 
-Screenshot: `screenshot workflows/ai svar eksempel.png`
+Screenshot: [eksempel_1/chat_og_log.png](../screenshots/eksempel_1/chat_og_log.png)
 
 **Kontrol – det står der i loven:**
 - **§ 112, stk. 2:** "Udlejeren skal holde ejendommen og det lejede forsvarligt ved lige,
@@ -76,7 +76,7 @@ Inputtet hedder `query` her, fordi det er sådan, det står i loggen fra dengang
 tidspunkt var værktøjets inputfelt ikke sat op endnu. Nu hedder feltet `spoergsmaal`, som
 beskrevet i [agent/tools.txt](../agent/tools.txt).
 
-Screenshot: `screenshot workflows/eksempel 2 tool fejler.png`
+Screenshot: [eksempel_2/tool_fejler.png](../screenshots/eksempel_2/tool_fejler.png)
 
 **Agentens svar (uddrag):**
 > Jeg kan desværre ikke få adgang til lovteksten i øjeblikket, fordi søgeværktøjet
@@ -105,7 +105,7 @@ Efter jeg havde rettet værktøjerne, stillede jeg et nyt spørgsmål i samme sa
 kun "Hukommelse" og "Claude Haiku". Agenten kunne se i hukommelsen, at værktøjerne havde
 fejlet tidligere, og gik ud fra, at de stadig ikke virkede.
 
-Screenshot: `screenshot workflows/eksempel 2 ingen tool kald.png`
+Screenshot: [eksempel_2/ingen_tool_kald.png](../screenshots/eksempel_2/ingen_tool_kald.png)
 
 Det rettede jeg med en ny regel ("Du skal ALTID kalde mindst ét værktøj …") og ved at
 genstarte n8n, så hukommelsen blev tømt. Se
@@ -120,50 +120,82 @@ genstarte n8n, så hukommelsen blev tømt. Se
 
 **Tool calls:**
 
-Mit screenshot af dette eksempel viser kun chatten og ikke loggen, så jeg kan ikke vise
-præcis, hvilke værktøjer agenten kaldte. Agenten skriver selv i svaret, at den ikke har
-hentet § 158. Det tyder på, at den har slået de andre paragraffer op, men ikke § 158.
+Loggen viser rækkefølgen: Claude Haiku → `vektorsoegning` → Claude Haiku → `grafsoegning`
+→ `grafsoegning` → Claude Haiku.
+
+| # | Værktøj | Input | Hvad den fik tilbage |
+|---|---------|-------|----------------------|
+| 1 | `vektorsoegning` | Agentens egen omskrivning af spørgsmålet om at videreudleje (fremleje) lejeboligen. Teksten er delvist skjult på screenshottet. | 5 stykker: § 160, stk. 1 (0,849), § 163, stk. 3 (0,843), § 160, stk. 2 (0,840), § 157, stk. 1 (0,838), § 150, stk. 2 (0,832) |
+| 2 | `grafsoegning` | `soegetype`: "paragraf", `vaerdi`: "157" | Hele § 157 med 3 stykker, emner (Lejerens brug og husorden, Fremleje og bytte), rettigheder, pligter, frister og begrebet "Beboermaksimum". Henviser til § 14. **Henvist til fra: § 150, § 158, § 159, § 168** |
+| 3 | `grafsoegning` | `soegetype`: "paragraf", `vaerdi`: "150" | Hele § 150 med 2 stykker, emner, rettigheder og pligter. **Henviser til: § 157** |
+
+Screenshots:
+- [eksempel_3/chat_og_log.png](../screenshots/eksempel_3/chat_og_log.png)
+- [eksempel_3/vektorsoegning.png](../screenshots/eksempel_3/vektorsoegning.png)
+- [eksempel_3/grafsoegning_157.png](../screenshots/eksempel_3/grafsoegning_157.png)
+- [eksempel_3/grafsoegning_150.png](../screenshots/eksempel_3/grafsoegning_150.png)
 
 **Agentens svar (uddrag):**
-> Det er lovligt at fremleje dele af din lejebolig, men kun inden for de rammer loven
-> sætter. Du må fremleje op til halvdelen af beboelsesrummene, og de personer, der bor
-> i lejligheden, må ikke overstige antallet af beboelsesrum.
+> **Kort svar:** Du må fremleje dele af din lejebolig uden udlejerens samtykke, men kun op
+> til halvdelen af beboelsesrummene, og du må ikke fremleje hele boligen uden udlejerens
+> samtykke. Fremlejeaftalen skal være skriftlig.
 >
-> Reglen står i lejeloven § 157, stk. 1. […] Hvis du fremlejer uden for denne ramme,
-> skal du have udlejerens samtykke, jf. § 150, stk. 2 […]
+> **Reglerne:**
+> - **Hovedreglen:** Som lejer må du ikke uden udlejerens samtykke overlade brugen af den
+>   lejede bolig eller dele af den til andre end medlemmer af din husstand (lejeloven
+>   § 150, stk. 2).
+> - **Undtagelsen – delvis fremleje:** Lejeren af en beboelseslejlighed har ret til at
+>   fremleje op til halvdelen af lejlighedens beboelsesrum til beboelse. […] (§ 157, stk. 1).
+> - **Beboermaksimum:** […] (§ 157, stk. 2).
+> - **Skriftlighed og frist:** Fremlejeaftalen skal indgås skriftligt, og du skal sende
+>   udlejeren en kopi af aftalen, inden fremlejeperiodens begyndelse (§ 157, stk. 3).
+> - **Ægtefælle:** Du må ikke fremleje uden ægtefællens samtykke, hvis det vil betyde, at
+>   boligen ikke længere kan tjene som fælles bolig […] (§ 160, stk. 1).
 >
-> Hvis du er gift eller har en ægtefælle, gælder der også en særregel […] jf. § 160, stk. 1.
+> **Det betyder i praksis:** Du må gerne leje et eller flere værelser ud til beboelse, men
+> ikke hele lejligheden uden udlejerens samtykke. […]
 >
-> Jeg har ikke hentet § 158, som kan indeholde yderligere regler om fremleje, så tjek
-> den selv eller spørg huslejenævnet, før du går i gang. Lovteksten er den oprindelige
-> lov fra 2022, og senere ændringer er ikke indeholdt her.
-
-Screenshot: `screenshot workflows/ai spg workflow 5.png`
+> Bemærk, at lovteksten er den oprindelige lov fra 2022, og senere ændringer er ikke
+> indarbejdet. […]
+>
+> **Kilder:** Lejeloven § 150, stk. 2 · Lejeloven § 157, stk. 1, 2 og 3 · Lejeloven § 160,
+> stk. 1 · https://www.retsinformation.dk/eli/lta/2022/341
 
 **Kontrol – det står der i loven:**
-- **§ 157, stk. 1:** Lejeren har ret til at fremleje op til halvdelen af beboelsesrummene,
-  og antallet af beboere må ikke overstige antallet af beboelsesrum.
 - **§ 150, stk. 2:** Lejeren må ikke uden udlejerens samtykke overlade det lejede til
   andre end sin husstand, "jf. dog §§ 157 og 158".
+- **§ 157, stk. 1-3:** Ret til at fremleje op til halvdelen af beboelsesrummene, regler om
+  beboermaksimum, og fremlejeaftalen skal være skriftlig med kopi til udlejeren.
+- **§ 158, stk. 1:** Lejeren har ret til at fremleje **hele** lejligheden i op til 2 år, når
+  fraværet er midlertidigt og skyldes fx sygdom, forretningsrejse, studieophold eller
+  midlertidig forflyttelse. Efter stk. 2 kan udlejeren dog modsætte sig, fx hvis
+  ejendommen har færre end 13 beboelseslejligheder.
 - **§ 160, stk. 1:** Lejeren må ikke fremleje uden ægtefællens samtykke, hvis boligen så
   ikke længere kan bruges som fælles bolig.
 
-**Vurdering: delvist godt, men ufuldstændigt**
+**Vurdering: godt struktureret, men ikke helt korrekt**
 - **Godt:** Agenten forstod spørgsmålet trods stavefejlen ("videreulejee"), fordi
-  vektorsøgningen søger på betydning og ikke på præcise ord. Alle tre paragraffer, den
-  citerer, passer med lovteksten. Den siger selv, hvad den ikke har tjekket, og gør
-  opmærksom på, at lovteksten er fra 2022.
-- **Begrænsning:** Agenten nævner selv § 158, men hentede den ikke. Det er en vigtig
-  paragraf. Ifølge § 158 har lejeren ret til at fremleje **hele** lejligheden i op til 2 år,
-  når fraværet er midlertidigt og skyldes fx sygdom, studieophold eller midlertidig
-  forflyttelse. Udlejeren kan dog modsætte sig, fx hvis ejendommen har færre end 13
-  beboelseslejligheder. Den regel mangler i svaret.
-- **Hvorfor:** Instruktionerne siger, at agenten typisk skal slå "de 1-2 mest relevante
-  paragraffer" op i grafen. Det holder antallet af værktøjskald nede, men betyder, at
-  agenten stopper, før den har fulgt alle henvisninger.
-- **Derudover:** Min opdelingskode fanger ikke alle henvisninger. § 150, stk. 2 henviser
-  til "§§ 157 og 158", men koden fanger kun § 157. Derfor er der ingen `HENVISER_TIL`-relation
-  fra § 150 til § 158 i grafen, og grafsøgningen på § 150 peger ikke videre til § 158.
-- **Mulig forbedring:** Skriv i instruktionerne, at agenten skal hente de paragraffer,
-  den selv nævner som relevante, før den svarer. Og ret opdelingskoden, så den også
-  fanger henvisninger skrevet med "og" og komma.
+  vektorsøgningen søger på betydning og ikke på præcise ord. Den brugte begge værktøjer:
+  vektorsøgning til at finde paragrafferne og grafsøgning til at hente hele § 157 og § 150.
+  Alt, hvad den skriver om § 150, § 157 og § 160, passer med lovteksten, og kilderne er
+  angivet.
+- **Fejl:** Agenten skriver, at man "ikke må fremleje hele boligen uden udlejerens
+  samtykke". Det er for unuanceret. § 158 giver lejeren **ret** til at fremleje hele
+  lejligheden i op til 2 år ved midlertidigt fravær. Agenten nævner slet ikke § 158, og den
+  siger heller ikke, at den mangler noget. En lejer, der skal på studieophold, ville få et
+  forkert svar.
+- **Hvorfor gik den glip af § 158?** Screenshots af værktøjskaldene viser tre årsager:
+  1. **Vektorsøgningen fandt den ikke.** § 158 var ikke blandt de 5 fund. Til gengæld kom
+     § 163, stk. 3 med, selvom den handler om overtagelse af erhvervslejemål. Scorerne
+     ligger tæt (0,832-0,849), så små forskelle i ordvalget afgør, hvad der kommer med.
+  2. **Grafen viste en henvisning, men agenten fulgte den ikke.** Grafsøgningen på § 157
+     svarede "Henvist til fra: § 150, § 158, § 159, § 168". Agenten fik altså at vide, at
+     § 158 hænger sammen med § 157, men slog den ikke op. Instruktionerne siger, at den
+     typisk skal slå "de 1-2 mest relevante paragraffer" op, og det gjorde den.
+  3. **Min opdelingskode mangler en henvisning.** § 150, stk. 2 henviser til "§§ 157 og 158",
+     men koden fanger kun § 157. Derfor svarede grafsøgningen på § 150 kun
+     "Henviser til: § 157".
+- **Mulig forbedring:** Skriv i instruktionerne, at agenten skal slå paragraffer op, som
+  grafen viser som henvisninger til eller fra den paragraf, svaret bygger på. Lad
+  vektorsøgningen returnere flere end 5 stykker. Og ret opdelingskoden, så den også fanger
+  henvisninger skrevet med "og" og komma.

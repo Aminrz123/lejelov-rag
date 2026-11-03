@@ -64,14 +64,26 @@ måde: model, instruktioner, guardrails og workflows som tools.
 | Krav | Fil |
 |---|---|
 | Workflows (JSON) | [workflows/](workflows/) |
-| Screenshots af workflows | [screenshot workflows/](screenshot%20workflows/) |
-| Screenshots fra Neo4j | [screenshot graph og vektor/](screenshot%20graph%20og%20vektor/) |
+| Screenshots af workflows | [screenshots/workflows/](screenshots/workflows/) (se tabellen herunder) |
+| Screenshot af agentens tool-forbindelser | [screenshots/workflows/05_agent_tool_forbindelser.png](screenshots/workflows/05_agent_tool_forbindelser.png) |
+| Screenshots fra Neo4j | [screenshots/neo4j/](screenshots/neo4j/) |
+| Screenshots til eksemplerne | [screenshots/eksempel_1/](screenshots/eksempel_1/), [eksempel_2/](screenshots/eksempel_2/), [eksempel_3/](screenshots/eksempel_3/) |
 | Agentens model, instruktioner og tools | [agent/](agent/) |
 | Prompts fra udviklingen | [docs/udviklingsprompts.txt](docs/udviklingsprompts.txt) |
 | Tre eksempler med vurdering | [docs/eksempler.md](docs/eksempler.md) |
 | Grafmodel: noder, relationer, properties | [docs/graf_model.md](docs/graf_model.md) |
 | Datakilde og sample | [data/](data/) |
 | Scripts til at genskabe databasen | [scripts/](scripts/) |
+
+## Workflows
+
+| Workflow | Formål | JSON | Screenshot |
+|---|---|---|---|
+| 01 Vektor-ingestion | Dataindlæsning (vektor): PDF → stykker → embeddings → Neo4j | [JSON](workflows/01_vektor_ingestion.json) | [billede](screenshots/workflows/01_vektor_ingestion.png) |
+| 02 Graf-ingestion | Dataindlæsning (graf): struktur med kode, viden med Claude Haiku | [JSON](workflows/02_graf_ingestion.json) | [billede](screenshots/workflows/02_graf_ingestion.png) |
+| 03 Vektorsøgning | Retrieval (vektor): tool, der finder de 5 mest lignende stykker | [JSON](workflows/03_vektor_soegning.json) | [billede](screenshots/workflows/03_vektor_soegning.png) |
+| 04 Grafsøgning | Retrieval (graf): tool, der slår en paragraf, et emne eller en part op | [JSON](workflows/04_graf_soegning.json) | [billede](screenshots/workflows/04_graf_soegning.png) |
+| 05 Lejerådgiveren | Agenten: chat, Claude Haiku, hukommelse og de to tools | [JSON](workflows/05_lejeraadgiveren_agent.json) | [billede](screenshots/workflows/05_agent_tool_forbindelser.png) |
 
 ## Begrænsninger
 
