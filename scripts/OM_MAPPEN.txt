@@ -14,6 +14,7 @@ opdel_lejeloven.js
   hvilke paragraffer der henviser til hinanden. Den samme kode ligger inde i
   workflow 01 og 02. Jeg har lagt den her, så den er nem at læse.
 
-Sådan bygger man databasen op igen:
+Sådan bygger man databasen op igen (alle trin står i README'en under "Opsætning"):
 1. Lav en database i Neo4j, der hedder "lejeloven", og kør neo4j_setup.cypher.
-2. Kør workflow 01 og derefter workflow 02 i n8n.
+2. Kopiér data/lejeloven.pdf ind i n8n-containeren.
+3. Kør workflow 01 og derefter workflow 02 i n8n.

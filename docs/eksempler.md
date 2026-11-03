@@ -126,8 +126,13 @@ Loggen viser rækkefølgen: Claude Haiku → `vektorsoegning` → Claude Haiku �
 | # | Værktøj | Input | Hvad den fik tilbage |
 |---|---------|-------|----------------------|
 | 1 | `vektorsoegning` | Agentens egen omskrivning af spørgsmålet om at videreudleje (fremleje) lejeboligen. Teksten er delvist skjult på screenshottet. | 5 stykker: § 160, stk. 1 (0,849), § 163, stk. 3 (0,843), § 160, stk. 2 (0,840), § 157, stk. 1 (0,838), § 150, stk. 2 (0,832) |
-| 2 | `grafsoegning` | `soegetype`: "paragraf", `vaerdi`: "157" | Hele § 157 med 3 stykker, emner (Lejerens brug og husorden, Fremleje og bytte), rettigheder, pligter, frister og begrebet "Beboermaksimum". Henviser til § 14. **Henvist til fra: § 150, § 158, § 159, § 168** |
+| 2 | `grafsoegning` | `soegetype`: "paragraf", `vaerdi`: "157" | Hele § 157 med 3 stykker, emner (Lejerens brug og husorden, Fremleje og bytte), rettigheder, pligter, frister og begrebet "Beboermaksimum". Henviser til § 14 (se note herunder). **Henvist til fra: § 150, § 158, § 159, § 168** |
 | 3 | `grafsoegning` | `soegetype`: "paragraf", `vaerdi`: "150" | Hele § 150 med 2 stykker, emner, rettigheder og pligter. **Henviser til: § 157** |
+
+**Note om § 14:** Grafen siger, at § 157 henviser til § 14. Det er forkert. § 157, stk. 2
+henviser til "§ 14, stk. 1, i lov om boligforhold", som er en anden lov. Min opdelingskode
+kan ikke se forskel på henvisninger til lejeloven og til andre love, så der er kommet en
+forkert `HENVISER_TIL`-relation til lejelovens § 14. Det påvirkede ikke svaret her.
 
 Screenshots:
 - [eksempel_3/chat_og_log.png](../screenshots/eksempel_3/chat_og_log.png)

@@ -74,6 +74,7 @@ måde: model, instruktioner, guardrails og workflows som tools.
 | Grafmodel: noder, relationer, properties | [docs/graf_model.md](docs/graf_model.md) |
 | Datakilde og sample | [data/](data/) |
 | Scripts til at genskabe databasen | [scripts/](scripts/) |
+| Kort forklaring af hele systemet | [system forklaring/systemoversigt.txt](system%20forklaring/systemoversigt.txt) |
 
 ## Workflows
 
@@ -98,6 +99,8 @@ Jeg har ikke brugt skills, fordi Agents builder ikke var tilgængelig i min n8n.
 - Lovteksten er fra 2022, så senere ændringer er ikke med.
 - Agenten følger ikke altid alle henvisninger, og opdelingskoden fanger ikke henvisninger
   som "§§ 157 og 158" (se eksempel 3).
+- Opdelingskoden kan ikke se forskel på henvisninger til lejeloven og til andre love. Fx
+  peger § 157 på lejelovens § 14, men teksten henviser til § 14 i lov om boligforhold.
 - Gamle fejl i hukommelsen kan få agenten til at stoppe med at bruge sine værktøjer
   (se eksempel 2).
 - Grafens viden er udtrukket af AI og kan være ufuldstændig. Graf-ingestion gav viden til
