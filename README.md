@@ -80,7 +80,10 @@ måde: model, instruktioner, guardrails og workflows som tools.
   som "§§ 157 og 158" (se eksempel 3).
 - Gamle fejl i hukommelsen kan få agenten til at stoppe med at bruge sine værktøjer
   (se eksempel 2).
-- Grafens viden er udtrukket af AI og kan være ufuldstændig.
+- Grafens viden er udtrukket af AI og kan være ufuldstændig. Graf-ingestion gav viden til
+  199 af 213 paragraffer. 10 blev afvist af valideringen, fordi AI'en fandt på emner, der
+  ikke står på den faste liste (fx "Huslejens regulering"). 4 fejlede i Neo4j, fordi n8n
+  sender flere paragraffer samtidig, så de støder ind i hinanden.
 - Kun private lejeboliger, ikke almene boliger eller erhverv.
 
 ## Brug af AI

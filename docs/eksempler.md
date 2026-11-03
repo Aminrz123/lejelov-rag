@@ -24,8 +24,12 @@ Screenshots ligger i [`screenshot workflows/`](../screenshot%20workflows/).
 
 | # | Værktøj | Input |
 |---|---------|-------|
-| 1 | [UDFYLD] | [UDFYLD] |
-| 2 | [UDFYLD] | [UDFYLD] |
+| 1 | `vektorsoegning` | Ikke med på screenshottet |
+| 2 | `grafsoegning` | Ikke med på screenshottet |
+
+Loggen på screenshottet viser rækkefølgen: Hukommelse → Claude Haiku → `vektorsoegning`
+→ `grafsoegning` → Claude Haiku → Hukommelse. Agenten brugte altså først vektorsøgning til
+at finde relevante stykker og derefter grafsøgning, før den skrev svaret.
 
 **Agentens svar (uddrag):**
 > Udlejeren har blandt andet pligt til at vedligeholde ejendommen og det lejede, sørge
@@ -112,10 +116,9 @@ genstarte n8n, så hukommelsen blev tømt. Se
 
 **Tool calls:**
 
-| # | Værktøj | Input |
-|---|---------|-------|
-| 1 | [UDFYLD] | [UDFYLD] |
-| 2 | [UDFYLD] | [UDFYLD] |
+Mit screenshot af dette eksempel viser kun chatten og ikke loggen, så jeg kan ikke vise
+præcis, hvilke værktøjer agenten kaldte. Agenten skriver selv i svaret, at den ikke har
+hentet § 158. Det tyder på, at den har slået de andre paragraffer op, men ikke § 158.
 
 **Agentens svar (uddrag):**
 > Det er lovligt at fremleje dele af din lejebolig, men kun inden for de rammer loven
