@@ -57,12 +57,24 @@ Format: **Node** : properties : unik på
 
 - **Lov** : navn, nummer, kilde : navn
 - **Kapitel** : nr, titel : nr
-- **Paragraf** : nr, overskrift, kilde : nr
-- **Stykke** : id, tekst, paragraf, stk, embedding, kilde : id
+- **Paragraf** : nr, overskrift, kapitel, kilde : nr
+- **Stykke** : id, tekst, embed_tekst, embedding, paragraf, stk, kapitel, kapitel_titel,
+  overskrift, lov, kilde : id
 - **Emne** : navn : navn
 - **Part** : navn : navn
 - **Frist** : id, beskrivelse, varighed : id
 - **Begreb** : navn, definition : navn
+
+Lidt om properties på `Stykke`:
+
+- `tekst` er selve lovteksten for stykket.
+- `embed_tekst` er den tekst, der bliver lavet til en vektor. Det er `tekst` med kapitel,
+  overskrift og paragraf sat foran, så vektoren også fanger sammenhængen.
+- `embedding` er vektoren fra bge-m3 (1024 tal). Den bruges af vektorindexet
+  `stykke_embedding`.
+- `paragraf`, `stk`, `kapitel`, `kapitel_titel` og `overskrift` er metadata, så
+  vektorsøgningen kan vise, hvor i loven et fund kommer fra, uden at skulle slå op i grafen.
+- `kilde` er linket til loven på Retsinformation.
 
 `GIVER_RET` og `PAALAEGGER_PLIGT` har også en property, `beskrivelse`, der forklarer, hvad
 retten eller pligten går ud på.
