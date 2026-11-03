@@ -1,0 +1,35 @@
+VÆRKTØJER (TOOLS) FOR LEJERÅDGIVEREN
+=====================================
+
+1. vektorsoegning
+-----------------
+Workflow:  03 Vektorsøgning (tool)
+Input:     spoergsmaal (tekst) – brugerens spørgsmål eller en kort beskrivelse af situationen
+Output:    De 5 stykker af lejeloven, der ligner spørgsmålet mest i betydning, med paragraf,
+           stykke, kapitel, relevansscore, tekst og kilde-link.
+
+Beskrivelse (indsættes i n8n):
+Semantisk søgning i lejeloven. Brug dette værktøj, når brugeren beskriver en situation
+med egne ord, og du skal finde ud af, hvilke paragraffer der er relevante. Input er
+brugerens spørgsmål i fritekst. Returnerer de 5 mest relevante stykker af loven med
+paragrafnummer, tekst og kilde.
+
+
+2. grafsoegning
+---------------
+Workflow:  04 Grafsøgning (tool)
+Input:     soegetype (tekst) – "paragraf", "emne" eller "part"
+           vaerdi (tekst)    – fx "59", "depositum" eller "Udlejer"
+Output:    Fakta fra grafen med kilde-link:
+           - paragraf: hele paragraffen med alle stykker, emner, rettigheder, pligter,
+             frister, begreber og henvisninger til/fra andre paragraffer
+           - emne: alle paragraffer om et emne med deres rettigheder, pligter og frister
+           - part: alle rettigheder og pligter, loven giver en part
+
+Beskrivelse (indsættes i n8n):
+Opslag i lejelovens graf. Brug soegetype "paragraf" med et paragrafnummer (fx "59")
+for at hente hele paragraffen med frister, rettigheder, pligter og henvisninger – brug
+den efter vektorsoegning for at få den fulde sammenhæng. Brug soegetype "emne" (fx
+"depositum", "opsigelse", "fraflytning") for at få alle paragraffer om et emne. Brug
+soegetype "part" med "Lejer", "Udlejer", "Huslejenævn", "Boligret", "Kommune" eller
+"Beboerrepræsentation" for at se alle rettigheder og pligter for den part.

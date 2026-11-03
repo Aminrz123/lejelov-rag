@@ -1,0 +1,46 @@
+MODELLER
+========
+
+Her har jeg skrevet, hvilke AI-modeller jeg bruger i projektet, og hvorfor.
+
+
+Agenten (Lejerådgiveren)
+------------------------
+Model:        Claude Haiku (claude-haiku-5-5)
+Udbyder:      Anthropic, via API
+Temperature:  0.2 (lav, så svarene bliver stabile og ikke "kreative")
+Hukommelse:   Husker de seneste 10 beskeder i samtalen (Window Buffer Memory)
+
+
+Graf-ingestion (workflow 02)
+----------------------------
+Model:        Claude Haiku (claude-haiku-5-5)
+Udbyder:      Anthropic, via API
+Temperature:  0 (så Cypher-koden bliver så ens og forudsigelig som muligt)
+Opgave:       Læser hver paragraf og skriver Cypher, der tilføjer emner, parter,
+              frister og begreber til grafen.
+
+
+Embeddings (workflow 01 og 03)
+------------------------------
+Model:        bge-m3
+Udbyder:      Ollama, kører lokalt på min computer
+Størrelse:    1024 dimensioner
+Opgave:       Laver lovteksten og brugerens spørgsmål om til vektorer, så man kan
+              søge på betydning.
+
+
+Hvorfor har jeg valgt dem?
+--------------------------
+bge-m3:
+  Den forstår dansk, fordi den er trænet på over 100 sprog. Mange andre
+  embedding-modeller er mest trænet på engelsk. Den er gratis og kører lokalt,
+  så lovteksten ikke bliver sendt ud på nettet.
+
+Claude Haiku:
+  Den er hurtig og billig, men stadig god nok til at vælge de rigtige værktøjer
+  og skrive Cypher i det rigtige format.
+
+  Jeg overvejede at bruge llama3.1:8b lokalt med Ollama, fordi den er gratis.
+  Men den er langsom på min computer, og små lokale modeller er dårligere til at
+  vælge værktøjer og holde sig til et fast format. Derfor valgte jeg Haiku.

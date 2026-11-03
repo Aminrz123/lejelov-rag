@@ -1,0 +1,29 @@
+SÅDAN HÆNGER DET SAMMEN
+=======================
+
+1. Indlæsning
+-------------
+Workflow 01 læser PDF'en, deler den op i 561 stykker og laver en vektor af hvert
+stykke med bge-m3.
+
+Workflow 02 bygger grafen: strukturen (kapitler, paragraffer, henvisninger) med kode,
+og viden (emner, parter, frister, begreber) med Claude Haiku.
+
+Begge gemmer i samme Neo4j-database.
+
+
+2. Spørgsmål
+------------
+Brugeren skriver i chatten. Agenten Lejerådgiveren beslutter selv, hvilket værktøj
+den skal bruge:
+
+  - Vektorsøgning finder stykker, der ligner spørgsmålet i betydning.
+
+  - Grafsøgning henter det, der hænger sammen: hele paragraffen, alle regler om et
+    emne eller alle rettigheder og pligter for en part.
+
+
+3. Svar
+-------
+Agenten skriver et svar ud fra de hentede tekster og afslutter altid med kilder
+(paragraf, stykke og link til Retsinformation).

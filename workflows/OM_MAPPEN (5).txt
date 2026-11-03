@@ -1,0 +1,28 @@
+workflows
+=========
+
+Her ligger alle mine n8n-workflows, eksporteret som JSON-filer. Opgaven kræver, at de
+er med, og man kan importere dem i n8n for at få hele systemet op at køre.
+
+01_vektor_ingestion.json
+  Læser PDF'en, deler loven op i 561 stykker, laver embeddings og gemmer dem i Neo4j.
+
+02_graf_ingestion.json
+  Bygger grafen. Strukturen (kapitler og paragraffer) laves med kode. Emner, parter,
+  frister og begreber finder Claude, som skriver Cypher. Jeg har lagt et tjek ind, der
+  stopper Cypher, som ikke følger reglerne, før den bliver kørt.
+
+03_vektor_soegning.json
+  Værktøj til agenten. Finder de 5 stykker i loven, der ligner et spørgsmål mest.
+
+04_graf_soegning.json
+  Værktøj til agenten. Henter en hel paragraf, alle paragraffer om et emne, eller alle
+  rettigheder og pligter for fx udlejeren.
+
+05_lejeraadgiveren_agent.json
+  Agenten med chat, Claude Haiku, hukommelse og de to værktøjer.
+
+Godt at vide:
+- Mine adgangskoder og API-nøgler er ikke med i filerne. De skal sættes ind igen i n8n.
+- 03 og 04 skal publiceres i n8n, ellers kan agenten ikke bruge dem.
+- Hvis jeg ændrer et workflow, skal det eksporteres igen, så filen her er opdateret.

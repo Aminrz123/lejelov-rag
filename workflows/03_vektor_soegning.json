@@ -1,0 +1,168 @@
+{
+  "name": "03 Vektorsøgning (tool)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "spoergsmaal",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "v1",
+      "name": "Kaldt af agenten",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "v0",
+      "name": "Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "spoergsmaal",
+              "value": "Hvor stort et depositum må min udlejer kræve?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "v2",
+      "name": "Testspørgsmål",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'bge-m3', input: $json.spoergsmaal }) }}",
+        "options": {}
+      },
+      "id": "v3",
+      "name": "Embed spørgsmål",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ statement: \"CALL db.index.vector.queryNodes('stykke_embedding', $k, $embedding) YIELD node, score RETURN node.id AS id, node.paragraf AS paragraf, node.stk AS stk, node.kapitel AS kapitel, node.kapitel_titel AS kapitel_titel, node.overskrift AS overskrift, node.tekst AS tekst, node.kilde AS kilde, round(score, 3) AS score ORDER BY score DESC\", parameters: { embedding: $json.embeddings[0], k: 5 } }) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth"
+      },
+      "id": "v4",
+      "name": "Vektorsøgning i Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gør Neo4j's svar læsbart for agenten: tekst + paragraf + kilde for hvert fund\nconst { fields, values } = $input.first().json.data;\nconst fund = values.map(v => Object.fromEntries(fields.map((f, i) => [f, v[i]])));\n\nif (!fund.length) {\n  return [{ json: { resultat: 'Ingen relevante stykker fundet i lejeloven.', fund: [] } }];\n}\n\nconst resultat = fund.map((r, i) => [\n  `[${i + 1}] Lejeloven § ${r.paragraf}, stk. ${r.stk}` +\n    ` (kapitel ${r.kapitel}: ${r.kapitel_titel}${r.overskrift ? ' – ' + r.overskrift : ''})` +\n    ` – relevans ${r.score}`,\n  r.tekst,\n  `Kilde: ${r.kilde}`,\n].join('\\n')).join('\\n\\n');\n\nreturn [{ json: { resultat, fund } }];\n"
+      },
+      "id": "v5",
+      "name": "Formatér resultat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Kaldt af agenten": {
+      "main": [
+        [
+          {
+            "node": "Embed spørgsmål",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test": {
+      "main": [
+        [
+          {
+            "node": "Testspørgsmål",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Testspørgsmål": {
+      "main": [
+        [
+          {
+            "node": "Embed spørgsmål",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed spørgsmål": {
+      "main": [
+        [
+          {
+            "node": "Vektorsøgning i Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vektorsøgning i Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér resultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

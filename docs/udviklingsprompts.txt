@@ -1,0 +1,90 @@
+PROMPTS BRUGT UNDER UDVIKLINGEN
+===============================
+
+Her har jeg samlet de prompts, jeg har brugt og rettet undervejs, og hvorfor jeg
+rettede dem.
+
+
+1. Prompt til graf-AI'en (workflow 02)
+--------------------------------------
+Bruges i noden "Byg AI-prompt" og sendes til Claude Haiku for hver af lovens 213
+paragraffer. Claude skal svare med én Cypher-sætning, der tilføjer emner, parter,
+frister og begreber til grafen.
+
+Den fulde prompt (eksempel for § 5) ligger i: docs/graf_prompt_eksempel.txt
+
+Det vigtigste i prompten:
+- En rolle: "Du er ekspert i dansk lejeret og i Neo4j Cypher."
+- Faste regler: kun MATCH, MERGE og SET – ingen DELETE, CREATE osv.
+- Faste lister med 21 emner og 6 parter, så grafen ikke får dubletter.
+- Et eksempel på et korrekt svar.
+- "Svar KUN med Cypher."
+
+Efter AI'en har svaret, tjekker noden "Valider Cypher", at svaret overholder
+reglerne. Hvis ikke, bliver det ikke gemt.
+
+
+2. Agentens instruktioner – version 1
+-------------------------------------
+Den første version af instruktionerne til Lejerådgiveren (workflow 05) indeholdt:
+- Rollen som rådgiver om lejeloven
+- Hvornår agenten skal bruge vektorsøgning og grafsøgning
+- Svarformat: kort svar, forklaring og "Kilder:" til sidst
+- Guardrails: kun svare ud fra værktøjernes tekster, ingen juridisk rådgivning i
+  konkrete sager, kun private lejeboliger, kun spørgsmål om leje
+
+
+3. Agentens instruktioner – version 2
+-------------------------------------
+Problem:
+Da jeg testede agenten første gang, var værktøjerne ikke sat rigtigt op i n8n,
+så de fejlede ("Workflow does not exist"). Agenten svarede alligevel på
+spørgsmålet om fremleje ud fra sin egen viden og skrev, at fremleje "som
+udgangspunkt kræver udlejerens samtykke". Det er ikke helt rigtigt, og det brød
+reglen om kun at svare ud fra lovteksten.
+
+Rettelse – tilføjet under GUARDRAILS:
+  "Hvis et værktøj fejler, må du IKKE svare ud fra din egen viden – heller ikke
+   med en "generel retning". Sig kun, at du ikke kunne hente lovteksten, og
+   henvis til hjælp."
+
+
+4. Agentens instruktioner – version 3 (den nuværende)
+-----------------------------------------------------
+Problem:
+Efter jeg havde rettet værktøjerne, kaldte agenten stadig ingen værktøjer. Loggen
+viste kun "Hukommelse" og "Claude Haiku". Agenten kunne se i hukommelsen, at
+værktøjerne havde fejlet tidligere i samtalen, og gik ud fra, at de stadig ikke
+virkede.
+
+Rettelse – tilføjet under "SÅDAN FINDER DU SVARET":
+  "Du skal ALTID kalde mindst ét værktøj, før du svarer på et spørgsmål om
+   loven – også selvom et værktøj fejlede tidligere i samtalen. Gå aldrig ud
+   fra, at værktøjerne stadig ikke virker."
+
+Derudover genstartede jeg n8n, så den gamle hukommelse blev tømt. Derefter
+brugte agenten værktøjerne.
+
+Den nuværende version ligger i: agent/instruktioner.txt
+
+
+5. Beskrivelser af værktøjerne
+------------------------------
+Beskrivelserne fortæller agenten, hvornår den skal bruge hvert værktøj. De ligger
+i agent/tools.txt og er sat ind i tool-noderne i workflow 05.
+
+
+6. Testspørgsmål
+----------------
+Spørgsmål, jeg har brugt til at teste systemet:
+- "Hvor stort et depositum må min udlejer kræve?"
+  (testspørgsmål i workflow 03 – fandt § 60 og § 59 om depositum)
+- "Må lejer videreudleje (fremleje) sin lejebolig til en anden?"
+  (første test af agenten – her gættede den, se version 2)
+- "Må jeg fremleje et værelse i min lejlighed?"
+- "Hvilke pligter har udlejeren?"
+  (her brugte agenten ikke værktøjerne pga. hukommelsen, se version 3)
+- "hej hvilke pligter har en udlejer"
+  (eksempel 1 i docs/eksempler.md)
+- "kan jeg videreulejee min lejebolig er det lovligt"
+  (eksempel 3 i docs/eksempler.md)

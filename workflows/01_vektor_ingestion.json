@@ -1,0 +1,239 @@
+{
+  "name": "01 Vektor-ingestion (lejeloven)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/lejeloven.pdf",
+        "options": {}
+      },
+      "id": "b2",
+      "name": "Læs PDF",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "b3",
+      "name": "Udtræk tekst fra PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Opdeler lejelovens tekst (fra n8n \"Extract From File\" → PDF) i stykker.\n// Bruges i n8n Code-noden \"Opdel i stykker\" (mode: Run Once for All Items).\n// Input:  $json.text  (hele PDF'ens tekst)\n// Output: ét item pr. stykke med kapitel, paragraf, stk, tekst, kilde og henviser_til.\n\nconst KILDE_URL = 'https://www.retsinformation.dk/eli/lta/2022/341';\n\nconst RE_KAPITEL = /^Kapitel (\\d+(?: ?[A-Z])?)\\s*$/;\nconst RE_PARAGRAF = /^§ (\\d+)(?: ([a-z]))?\\.\\s*(.*)$/;\nconst RE_STK = /^Stk\\. (\\d+)\\.\\s*(.*)$/;\nconst RE_STOEJ = /^(Udskriftsdato:.*|(LBK|LOV) nr \\d+ af \\d{2}\\/\\d{2}\\/\\d{4}.*|\\d+)$/;\nconst RE_HENVISNING = /§§? ?(\\d+)(?: ([a-z])(?!\\p{L}))?(?:-(\\d+))?/gu;\n\nfunction opdel(tekst) {\n  tekst = tekst.replace(/­/g, '-');\n  tekst = tekst.replace(/(\\p{L})-[ \\t]*\\n[ \\t]*([a-zæøå])/gu, '$1$2'); // orddeling ved linjeskift\n  tekst = tekst.split('Givet på Christiansborg')[0];                      // fjern underskrift\n\n  const linjer = tekst.split('\\n').map(l => l.trim()).filter(l => l && !RE_STOEJ.test(l));\n\n  const poster = [];\n  let kapitelNr = null, kapitelTitel = null, overskrift = null, aktuel = null;\n  let sidstePar = [0, ''];\n  let ventPaaTitel = false;\n\n  const stoerre = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);\n  const gem = () => {\n    if (aktuel && aktuel.tekst.trim()) {\n      aktuel.tekst = aktuel.tekst.replace(/\\s+/g, ' ').trim();\n      poster.push(aktuel);\n    }\n  };\n  const nyPost = (par, stk, tekst) => ({\n    id: `§${par.replace(' ', '')}-stk${stk}`,\n    lov: 'Lejeloven',\n    kapitel: kapitelNr,\n    kapitel_titel: kapitelTitel,\n    overskrift,\n    paragraf: par,\n    stk,\n    tekst,\n    kilde: KILDE_URL,\n  });\n\n  for (let i = 0; i < linjer.length; i++) {\n    const linje = linjer[i];\n\n    let m = linje.match(RE_KAPITEL);\n    if (m) { gem(); aktuel = null; kapitelNr = m[1].replace(' ', ''); ventPaaTitel = true; continue; }\n    if (ventPaaTitel) { kapitelTitel = linje; ventPaaTitel = false; continue; }\n\n    // Ny paragraf: nummeret skal være større end det forrige og tæt på (loven er fortløbende)\n    m = linje.match(RE_PARAGRAF);\n    const ny = m ? [parseInt(m[1]), m[2] || ''] : null;\n    if (m && stoerre(ny, sidstePar) && ny[0] - sidstePar[0] <= 3) {\n      if (aktuel) {\n        const forrige = linjer[i - 1];\n        if (forrige.length < 70 && !/[.,;:]$/.test(forrige) && aktuel.tekst.endsWith(forrige)) {\n          aktuel.tekst = aktuel.tekst.slice(0, -forrige.length).trim(); // mellemoverskrift\n          overskrift = forrige;\n        } else {\n          overskrift = null;\n        }\n      }\n      gem();\n      const nr = m[1] + (m[2] ? ` ${m[2]}` : '');\n      sidstePar = ny;\n      aktuel = nyPost(nr, 1, m[3]);\n      continue;\n    }\n\n    m = linje.match(RE_STK);\n    if (m && aktuel && parseInt(m[1]) === aktuel.stk + 1) {\n      gem();\n      const par = aktuel.paragraf, ov = aktuel.overskrift;\n      overskrift = ov;\n      aktuel = nyPost(par, parseInt(m[1]), m[2]);\n      continue;\n    }\n\n    if (aktuel) aktuel.tekst += ' ' + linje;\n    else overskrift = linje; // tekst mellem kapiteltitel og første § = mellemoverskrift\n  }\n  gem();\n\n  // Henvisninger til andre paragraffer (inkl. intervaller som \"§§ 60-61\")\n  for (const p of poster) {\n    const refs = new Set();\n    for (const [, nr, bog, til] of p.tekst.matchAll(RE_HENVISNING)) {\n      const numre = [nr + (bog ? ` ${bog}` : '')];\n      if (til && +til > +nr && +til - +nr < 30) for (let n = +nr + 1; n <= +til; n++) numre.push(String(n));\n      numre.filter(r => r !== p.paragraf).forEach(r => refs.add(r));\n    }\n    p.henviser_til = [...refs].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));\n  }\n  return poster;\n}\n\nreturn opdel($input.first().json.text).map(p => ({ json: p }));\n"
+      },
+      "id": "b4",
+      "name": "Opdel i stykker",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bygger teksten der embeddes: kontekst (kapitel/overskrift/§) + selve teksten\nreturn $input.all().map(item => {\n  const s = item.json;\n  const kontekst = [\n    `Lejeloven, kapitel ${s.kapitel}${s.kapitel_titel ? ' – ' + s.kapitel_titel : ''}`,\n    s.overskrift ? s.overskrift : null,\n    `§ ${s.paragraf}, stk. ${s.stk}`\n  ].filter(Boolean).join('. ');\n  return { json: { ...s, embed_tekst: `${kontekst}: ${s.tekst}` } };\n});"
+      },
+      "id": "a5",
+      "name": "Byg embed-tekst",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'bge-m3', input: $json.embed_tekst }) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 10,
+              "batchInterval": 100
+            }
+          }
+        }
+      },
+      "id": "a6",
+      "name": "Embed (Ollama bge-m3)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Kobler embedding sammen med det oprindelige stykke og bygger Cypher\nconst stykker = $('Byg embed-tekst').all();\nconst cypher = `\nMERGE (s:Stykke {id: $id})\nSET s.tekst = $tekst,\n    s.embed_tekst = $embed_tekst,\n    s.paragraf = $paragraf,\n    s.stk = $stk,\n    s.kapitel = $kapitel,\n    s.kapitel_titel = $kapitel_titel,\n    s.overskrift = $overskrift,\n    s.lov = $lov,\n    s.kilde = $kilde,\n    s.embedding = $embedding\nRETURN s.id AS id`;\n\nreturn $input.all().map((item, i) => {\n  const s = stykker[i].json;\n  const embedding = item.json.embeddings[0];\n  return { json: {\n    id: s.id,\n    payload: { statement: cypher, parameters: {\n      id: s.id, tekst: s.tekst, embed_tekst: s.embed_tekst,\n      paragraf: s.paragraf, stk: s.stk, kapitel: s.kapitel,\n      kapitel_titel: s.kapitel_titel, overskrift: s.overskrift,\n      lov: s.lov, kilde: s.kilde, embedding\n    }}\n  }};\n});"
+      },
+      "id": "a7",
+      "name": "Byg Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 20,
+              "batchInterval": 50
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth"
+      },
+      "id": "a8",
+      "name": "Gem i Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Query API svarer med fejlkode ved fejl, så noden 'Gem i Neo4j' stopper selv.\n// Her tæller vi bare, hvor mange stykker der blev gemt.\nconst fejl = $input.all().filter(i => (i.json.errors || []).length > 0);\nif (fejl.length) throw new Error(`${fejl.length} fejl: ${JSON.stringify(fejl[0].json.errors[0])}`);\nreturn [{ json: { gemt: $input.all().length } }];"
+      },
+      "id": "a9",
+      "name": "Tjek for fejl",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Læs PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Læs PDF": {
+      "main": [
+        [
+          {
+            "node": "Udtræk tekst fra PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Udtræk tekst fra PDF": {
+      "main": [
+        [
+          {
+            "node": "Opdel i stykker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opdel i stykker": {
+      "main": [
+        [
+          {
+            "node": "Byg embed-tekst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg embed-tekst": {
+      "main": [
+        [
+          {
+            "node": "Embed (Ollama bge-m3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed (Ollama bge-m3)": {
+      "main": [
+        [
+          {
+            "node": "Byg Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg Cypher": {
+      "main": [
+        [
+          {
+            "node": "Gem i Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gem i Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Tjek for fejl",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

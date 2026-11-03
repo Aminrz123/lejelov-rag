@@ -1,0 +1,9 @@
+system forklaring
+=================
+
+Her har jeg skrevet en kort forklaring på, hvordan hele systemet hænger sammen,
+fra lovteksten bliver læst ind, til agenten svarer i chatten.
+
+systemoversigt.txt
+  Forklarer de tre trin (indlæsning, spørgsmål og svar), og hvornår agenten bruger
+  vektorsøgning, og hvornår den bruger grafsøgning.

@@ -1,0 +1,20 @@
+docs
+====
+
+Her har jeg samlet dokumentationen af, hvordan jeg har tænkt og hvilke valg jeg har
+truffet, især omkring grafen.
+
+graf_model.md
+  Min grafmodel. Jeg har brugt AI til at foreslå, hvilke typer noder og relationer
+  grafen skulle have, og så har jeg ryddet op i forslaget (normaliseret det). Filen
+  forklarer, hvad jeg ændrede og hvorfor, og viser den endelige model.
+
+graf_prompt_eksempel.txt
+  Et eksempel på den besked (prompt), workflow 02 sender til Claude for hver paragraf,
+  når den skal skrive Cypher til grafen.
+
+arkitektur.png og arkitektur.md
+  En tegning af hele systemet og en kort forklaring af, hvordan delene hænger sammen.
+
+noter.txt
+  Mine noter undervejs: tal fra kørslerne og de fejl, jeg har fundet og rettet.

@@ -1,0 +1,17 @@
+data
+====
+
+Her ligger de data, hele projektet bygger på.
+
+lejeloven.pdf
+  Lejeloven, som jeg har hentet fra Retsinformation.dk (lov nr. 341 af 22. marts 2022).
+  Det er min eneste datakilde. Workflow 01 og 02 læser den her fil.
+
+lejeloven_sample.json
+  Et lille udsnit (de første 15 stykker) af loven, efter at den er blevet delt op.
+  Den er med, fordi opgaven beder om en lille sample af dataene, så man kan se,
+  hvordan de ser ud.
+
+En ting at vide: PDF'en er loven, som den blev vedtaget i 2022. Der er kommet nogle
+ændringer siden, som ikke står i teksten. Så agenten kan i nogle tilfælde svare ud fra
+regler, der er blevet ændret.

@@ -1,0 +1,19 @@
+scripts
+=======
+
+Her ligger de scripts, man skal bruge for at bygge min database op igen fra bunden.
+Opgaven kræver, at man afleverer det, så andre kan genskabe dataene.
+
+neo4j_setup.cypher
+  Skal køres i Neo4j først. Den laver nogle regler (constraints), så den samme ting
+  ikke kan blive gemt to gange, og den laver vektorindexet, så man kan søge på
+  betydning.
+
+opdel_lejeloven.js
+  Koden, der deler lovteksten op i kapitler, paragraffer og stykker, og finder ud af,
+  hvilke paragraffer der henviser til hinanden. Den samme kode ligger inde i
+  workflow 01 og 02. Jeg har lagt den her, så den er nem at læse.
+
+Sådan bygger man databasen op igen:
+1. Lav en database i Neo4j, der hedder "lejeloven", og kør neo4j_setup.cypher.
+2. Kør workflow 01 og derefter workflow 02 i n8n.

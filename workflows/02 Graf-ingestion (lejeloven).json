@@ -1,0 +1,454 @@
+{
+  "name": "02 Graf-ingestion (lejeloven)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "959d6d24-8c69-4a7e-8a91-698a245e2c29",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/lejeloven.pdf",
+        "options": {}
+      },
+      "id": "344d62e5-6823-4047-b09f-e121bcf86d8f",
+      "name": "Læs PDF",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        48,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "9c227c33-6436-4461-9ca3-78c5725bca19",
+      "name": "Udtræk tekst fra PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        272,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Opdeler lejelovens tekst (fra n8n \"Extract From File\" → PDF) i stykker.\n// Bruges i n8n Code-noden \"Opdel i stykker\" (mode: Run Once for All Items).\n// Input:  $json.text  (hele PDF'ens tekst)\n// Output: ét item pr. stykke med kapitel, paragraf, stk, tekst, kilde og henviser_til.\n\nconst KILDE_URL = 'https://www.retsinformation.dk/eli/lta/2022/341';\n\nconst RE_KAPITEL = /^Kapitel (\\d+(?: ?[A-Z])?)\\s*$/;\nconst RE_PARAGRAF = /^§ (\\d+)(?: ([a-z]))?\\.\\s*(.*)$/;\nconst RE_STK = /^Stk\\. (\\d+)\\.\\s*(.*)$/;\nconst RE_STOEJ = /^(Udskriftsdato:.*|(LBK|LOV) nr \\d+ af \\d{2}\\/\\d{2}\\/\\d{4}.*|\\d+)$/;\nconst RE_HENVISNING = /§§? ?(\\d+)(?: ([a-z])(?!\\p{L}))?(?:-(\\d+))?/gu;\n\nfunction opdel(tekst) {\n  tekst = tekst.replace(/­/g, '-');\n  tekst = tekst.replace(/(\\p{L})-[ \\t]*\\n[ \\t]*([a-zæøå])/gu, '$1$2'); // orddeling ved linjeskift\n  tekst = tekst.split('Givet på Christiansborg')[0];                      // fjern underskrift\n\n  const linjer = tekst.split('\\n').map(l => l.trim()).filter(l => l && !RE_STOEJ.test(l));\n\n  const poster = [];\n  let kapitelNr = null, kapitelTitel = null, overskrift = null, aktuel = null;\n  let sidstePar = [0, ''];\n  let ventPaaTitel = false;\n\n  const stoerre = (a, b) => a[0] > b[0] || (a[0] === b[0] && a[1] > b[1]);\n  const gem = () => {\n    if (aktuel && aktuel.tekst.trim()) {\n      aktuel.tekst = aktuel.tekst.replace(/\\s+/g, ' ').trim();\n      poster.push(aktuel);\n    }\n  };\n  const nyPost = (par, stk, tekst) => ({\n    id: `§${par.replace(' ', '')}-stk${stk}`,\n    lov: 'Lejeloven',\n    kapitel: kapitelNr,\n    kapitel_titel: kapitelTitel,\n    overskrift,\n    paragraf: par,\n    stk,\n    tekst,\n    kilde: KILDE_URL,\n  });\n\n  for (let i = 0; i < linjer.length; i++) {\n    const linje = linjer[i];\n\n    let m = linje.match(RE_KAPITEL);\n    if (m) { gem(); aktuel = null; kapitelNr = m[1].replace(' ', ''); ventPaaTitel = true; continue; }\n    if (ventPaaTitel) { kapitelTitel = linje; ventPaaTitel = false; continue; }\n\n    // Ny paragraf: nummeret skal være større end det forrige og tæt på (loven er fortløbende)\n    m = linje.match(RE_PARAGRAF);\n    const ny = m ? [parseInt(m[1]), m[2] || ''] : null;\n    if (m && stoerre(ny, sidstePar) && ny[0] - sidstePar[0] <= 3) {\n      if (aktuel) {\n        const forrige = linjer[i - 1];\n        if (forrige.length < 70 && !/[.,;:]$/.test(forrige) && aktuel.tekst.endsWith(forrige)) {\n          aktuel.tekst = aktuel.tekst.slice(0, -forrige.length).trim(); // mellemoverskrift\n          overskrift = forrige;\n        } else {\n          overskrift = null;\n        }\n      }\n      gem();\n      const nr = m[1] + (m[2] ? ` ${m[2]}` : '');\n      sidstePar = ny;\n      aktuel = nyPost(nr, 1, m[3]);\n      continue;\n    }\n\n    m = linje.match(RE_STK);\n    if (m && aktuel && parseInt(m[1]) === aktuel.stk + 1) {\n      gem();\n      const par = aktuel.paragraf, ov = aktuel.overskrift;\n      overskrift = ov;\n      aktuel = nyPost(par, parseInt(m[1]), m[2]);\n      continue;\n    }\n\n    if (aktuel) aktuel.tekst += ' ' + linje;\n    else overskrift = linje; // tekst mellem kapiteltitel og første § = mellemoverskrift\n  }\n  gem();\n\n  // Henvisninger til andre paragraffer (inkl. intervaller som \"§§ 60-61\")\n  for (const p of poster) {\n    const refs = new Set();\n    for (const [, nr, bog, til] of p.tekst.matchAll(RE_HENVISNING)) {\n      const numre = [nr + (bog ? ` ${bog}` : '')];\n      if (til && +til > +nr && +til - +nr < 30) for (let n = +nr + 1; n <= +til; n++) numre.push(String(n));\n      numre.filter(r => r !== p.paragraf).forEach(r => refs.add(r));\n    }\n    p.henviser_til = [...refs].sort((a, b) => parseInt(a) - parseInt(b) || a.localeCompare(b));\n  }\n  return poster;\n}\n\nreturn opdel($input.first().json.text).map(p => ({ json: p }));\n"
+      },
+      "id": "068330c2-e8c3-41b0-bd3a-24de2e47819e",
+      "name": "Opdel i stykker",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Samler stykkerne pr. paragraf: ét item pr. paragraf med hele teksten og listen af stykke-id'er\nconst par = new Map();\nfor (const { json: s } of $input.all()) {\n  if (!par.has(s.paragraf)) {\n    par.set(s.paragraf, {\n      nr: s.paragraf,\n      kapitel: s.kapitel,\n      kapitel_titel: s.kapitel_titel,\n      overskrift: s.overskrift,\n      kilde: s.kilde,\n      stykker: [],\n      henviser_til: new Set(),\n      tekst: '',\n    });\n  }\n  const p = par.get(s.paragraf);\n  p.stykker.push(s.id);\n  s.henviser_til.forEach(r => p.henviser_til.add(r));\n  p.tekst += (s.stk === 1 ? `§ ${s.paragraf}. ` : ` Stk. ${s.stk}. `) + s.tekst;\n}\nreturn [...par.values()].map(p => ({ json: { ...p, henviser_til: [...p.henviser_til] } }));\n"
+      },
+      "name": "Grupér pr. paragraf",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "187a53a4-1004-44c5-80d4-2e0890f7e08c",
+      "position": [
+        704,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Én Cypher-sætning, der bygger hele strukturen: Lov → Kapitel → Paragraf → Stykke\nconst statement = `\nUNWIND $paragraffer AS x\nMERGE (l:Lov {navn: 'Lejeloven'})\n  SET l.nummer = 'LOV nr 341 af 22/03/2022', l.kilde = x.kilde\nMERGE (k:Kapitel {nr: x.kapitel})\n  SET k.titel = x.kapitel_titel\nMERGE (l)-[:HAR_KAPITEL]->(k)\nMERGE (p:Paragraf {nr: x.nr})\n  SET p.overskrift = x.overskrift, p.kilde = x.kilde, p.kapitel = x.kapitel\nMERGE (k)-[:HAR_PARAGRAF]->(p)\nWITH p, x\nUNWIND x.stykker AS sid\nMATCH (s:Stykke {id: sid})\nMERGE (p)-[:HAR_STYKKE]->(s)\nRETURN count(DISTINCT p) AS paragraffer`;\nconst paragraffer = $input.all().map(i => {\n  const { nr, kapitel, kapitel_titel, overskrift, kilde, stykker } = i.json;\n  return { nr, kapitel, kapitel_titel, overskrift, kilde, stykker };\n});\nreturn [{ json: { payload: { statement, parameters: { paragraffer } } } }];\n"
+      },
+      "name": "Byg struktur-Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "d5d1b771-7adf-4956-96c8-de65a2b33ec3",
+      "position": [
+        928,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "2963be95-e922-4408-9918-6ba8d2d26110",
+      "name": "Gem struktur",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        48
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zW4tIvz6KRJp3SVa",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// HENVISER_TIL mellem paragraffer. MATCH sikrer, at kun paragraffer, der findes i loven, bliver forbundet.\nconst statement = `\nUNWIND $paragraffer AS x\nMATCH (p:Paragraf {nr: x.nr})\nUNWIND x.henviser_til AS ref\nMATCH (q:Paragraf {nr: ref})\nMERGE (p)-[:HENVISER_TIL]->(q)\nRETURN count(*) AS henvisninger`;\nconst paragraffer = $('Grupér pr. paragraf').all()\n  .map(i => ({ nr: i.json.nr, henviser_til: i.json.henviser_til }))\n  .filter(p => p.henviser_til.length);\nreturn [{ json: { payload: { statement, parameters: { paragraffer } } } }];\n"
+      },
+      "name": "Byg henvisninger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "4765b466-b113-44da-a5fd-595a69f7d548",
+      "position": [
+        1376,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "43a43d04-4879-4969-baae-0d5fc3d0e76e",
+      "name": "Gem henvisninger",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1584,
+        48
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zW4tIvz6KRJp3SVa",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bygger prompten til AI'en for hver paragraf\nconst EMNER = ['Anvendelsesområde', 'Lejeaftalen', 'Husleje og lejefastsættelse',\n  'Lejeforhøjelse og lejenedsættelse', 'Depositum og forudbetalt leje', 'Betaling af leje',\n  'Forbrug (varme, vand, el)', 'Indflytning', 'Mangler', 'Vedligeholdelse', 'Forbedringer',\n  'Lejerens brug og husorden', 'Fremleje og bytte', 'Opsigelse', 'Ophævelse', 'Fraflytning',\n  'Beboerrepræsentation', 'Huslejenævn og boligret', 'Tilbudspligt', 'Straf', 'Fravigelighed'];\nconst PARTER = ['Lejer', 'Udlejer', 'Huslejenævn', 'Boligret', 'Kommune', 'Beboerrepræsentation'];\n\nreturn $('Grupér pr. paragraf').all().map(({ json: p }) => {\n  const prompt = `Du er ekspert i dansk lejeret og i Neo4j Cypher.\nDu får én paragraf fra lejeloven. Skriv ÉN Cypher-sætning, der tilføjer viden om paragraffen til en graf.\n\nREGLER\n1. Start præcis med: MATCH (p:Paragraf {nr: \"${p.nr}\"})\n2. Efter MATCH må du kun bruge MERGE og SET. Ingen CREATE, DELETE, REMOVE, DETACH, DROP, CALL, LOAD, UNWIND eller FOREACH.\n3. Tilladte noder:\n   - (:Emne {navn})\n   - (:Part {navn})\n   - (:Frist {id}) med SET beskrivelse og varighed\n   - (:Begreb {navn}) med SET definition\n4. Tilladte relationer, altid fra p:\n   - (p)-[:HANDLER_OM]->(Emne)                        1-2 emner, altid mindst ét\n   - (p)-[:GIVER_RET {beskrivelse: \"...\"}]->(Part)     når paragraffen giver en part en ret\n   - (p)-[:PAALAEGGER_PLIGT {beskrivelse: \"...\"}]->(Part)  når paragraffen pålægger en part en pligt\n   - (p)-[:FASTSAETTER_FRIST]->(Frist)                kun for konkrete frister/varsler (fx \"14 dage\", \"3 måneder\")\n   - (p)-[:DEFINERER]->(Begreb)                       kun hvis paragraffen definerer et begreb\n5. Emne.navn SKAL være præcis én af: ${EMNER.map(e => `\"${e}\"`).join(', ')}\n6. Part.navn SKAL være præcis én af: ${PARTER.map(e => `\"${e}\"`).join(', ')}\n7. Frist.id skal være \"${p.nr}-1\", \"${p.nr}-2\" osv.\n8. Brug dobbelte anførselstegn om al tekst, og brug aldrig anførselstegn eller backslash inde i teksten.\n9. Giv hver variabel et unikt navn (e1, e2, a1, f1, b1 ...).\n10. Beskrivelser og definitioner skal være korte (højst 15 ord) og på dansk.\n11. Svar KUN med Cypher. Ingen forklaring, ingen markdown, ingen semikolon.\n\nEKSEMPEL (for en anden paragraf)\nMATCH (p:Paragraf {nr: \"999\"})\nMERGE (e1:Emne {navn: \"Depositum og forudbetalt leje\"})\nMERGE (p)-[:HANDLER_OM]->(e1)\nMERGE (a1:Part {navn: \"Udlejer\"})\nMERGE (p)-[:GIVER_RET {beskrivelse: \"Kan kræve depositum på højst 3 måneders leje\"}]->(a1)\nMERGE (f1:Frist {id: \"999-1\"})\nSET f1.beskrivelse = \"Depositum højst svarende til leje for\", f1.varighed = \"3 måneder\"\nMERGE (p)-[:FASTSAETTER_FRIST]->(f1)\n\nPARAGRAFFEN\nKapitel ${p.kapitel}: ${p.kapitel_titel}${p.overskrift ? `\\nOverskrift: ${p.overskrift}` : ''}\n${p.tekst}`;\n  return { json: { nr: p.nr, prompt } };\n});\n"
+      },
+      "name": "Byg AI-prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "5a792772-d0fe-450e-97b2-d66a8aef24dd",
+      "position": [
+        1808,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "name": "Test: kun 5 paragraffer",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "id": "45ef25af-a05d-47e0-b03b-1ba138694620",
+      "position": [
+        2032,
+        48
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "batching": {}
+      },
+      "name": "AI: skriv Cypher",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "id": "92eaf282-3abb-4e18-ac8f-37537d0a645c",
+      "position": [
+        2256,
+        48
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tjekker AI'ens Cypher, før den køres (guardrail). Ugyldig Cypher bliver erstattet af en ufarlig sætning.\nconst EMNER = new Set(['Anvendelsesområde', 'Lejeaftalen', 'Husleje og lejefastsættelse',\n  'Lejeforhøjelse og lejenedsættelse', 'Depositum og forudbetalt leje', 'Betaling af leje',\n  'Forbrug (varme, vand, el)', 'Indflytning', 'Mangler', 'Vedligeholdelse', 'Forbedringer',\n  'Lejerens brug og husorden', 'Fremleje og bytte', 'Opsigelse', 'Ophævelse', 'Fraflytning',\n  'Beboerrepræsentation', 'Huslejenævn og boligret', 'Tilbudspligt', 'Straf', 'Fravigelighed']);\nconst PARTER = new Set(['Lejer', 'Udlejer', 'Huslejenævn', 'Boligret', 'Kommune', 'Beboerrepræsentation']);\nconst NODER = new Set(['Paragraf', 'Emne', 'Part', 'Frist', 'Begreb']);\nconst RELATIONER = new Set(['HANDLER_OM', 'GIVER_RET', 'PAALAEGGER_PLIGT', 'FASTSAETTER_FRIST', 'DEFINERER']);\nconst FORBUDT = /\\b(CREATE|DELETE|DETACH|REMOVE|DROP|CALL|LOAD|UNWIND|FOREACH)\\b/i;\n\nconst prompts = $('Byg AI-prompt').all();\n\nreturn $input.all().map((item, i) => {\n  const nr = prompts[i].json.nr;\n  let cypher = String(item.json.text || '').trim()\n    .replace(/^```(?:cypher)?\\s*/i, '').replace(/```\\s*$/, '').trim().replace(/;\\s*$/, '');\n  const fejl = [];\n\n  if (item.json.error) fejl.push('AI-fejl: ' + JSON.stringify(item.json.error).slice(0, 200));\n  if (!cypher.startsWith(`MATCH (p:Paragraf {nr: \"${nr}\"})`)) fejl.push('Starter ikke med den rigtige MATCH');\n  // tjek kun nøgleord uden for tekststrenge\n  const udenTekst = cypher.replace(/\"[^\"]*\"/g, '\"\"');\n  if ((udenTekst.match(/\\bMATCH\\b/gi) || []).length !== 1) fejl.push('Skal have præcis én MATCH');\n  if (FORBUDT.test(udenTekst)) fejl.push('Forbudt nøgleord: ' + udenTekst.match(FORBUDT)[0]);\n  for (const [, l] of udenTekst.matchAll(/\\(\\s*\\w*\\s*:\\s*(\\w+)/g)) if (!NODER.has(l)) fejl.push('Ukendt node: ' + l);\n  for (const [, r] of udenTekst.matchAll(/\\[\\s*\\w*\\s*:\\s*(\\w+)/g)) if (!RELATIONER.has(r)) fejl.push('Ukendt relation: ' + r);\n  for (const [, n] of cypher.matchAll(/:Emne\\s*\\{\\s*navn\\s*:\\s*\"([^\"]*)\"/g)) if (!EMNER.has(n)) fejl.push('Ukendt emne: ' + n);\n  for (const [, n] of cypher.matchAll(/:Part\\s*\\{\\s*navn\\s*:\\s*\"([^\"]*)\"/g)) if (!PARTER.has(n)) fejl.push('Ukendt part: ' + n);\n  if (!/HANDLER_OM/.test(cypher)) fejl.push('Mangler HANDLER_OM');\n\n  const gyldig = fejl.length === 0;\n  return { json: {\n    nr,\n    gyldig,\n    fejl,\n    cypher,\n    payload: { statement: gyldig ? cypher : 'RETURN \"sprunget over\" AS status' },\n  }};\n});\n"
+      },
+      "name": "Valider Cypher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "7b22bbbb-0b81-443b-943c-e3169bcc12c2",
+      "position": [
+        2464,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "4a23398d-2012-4ff9-b0ce-d11926fe609a",
+      "name": "Gem viden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2688,
+        48
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "zW4tIvz6KRJp3SVa",
+          "name": "Unnamed credential"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Samler resultatet: hvor mange paragraffer fik viden tilføjet, og hvilke fejlede\nconst validering = $('Valider Cypher').all().map(i => i.json);\nconst svar = $input.all().map(i => i.json);\nconst afvist = validering.filter(v => !v.gyldig).map(v => ({ nr: v.nr, fejl: v.fejl }));\nconst neo4jFejl = svar\n  .map((s, i) => ({ nr: validering[i].nr, i, s }))\n  .filter(x => validering[x.i]?.gyldig && (x.s.error || (x.s.errors || []).length))\n  .map(x => ({ nr: x.nr, fejl: JSON.stringify(x.s.error || x.s.errors).slice(0, 300) }));\nreturn [{ json: {\n  paragraffer: validering.length,\n  gemt: validering.length - afvist.length - neo4jFejl.length,\n  afvist_af_validering: afvist,\n  fejl_i_neo4j: neo4jFejl,\n}}];\n"
+      },
+      "name": "Opsummering",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "id": "9d73f6f6-766f-480a-af0d-22b5ea6cc5dd",
+      "position": [
+        2912,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "maxTokensToSample": 1500,
+          "temperature": 0
+        }
+      },
+      "name": "Claude Haiku",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "id": "1f1caf1e-d958-457a-b8a5-92e5353cca9b",
+      "position": [
+        2256,
+        272
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "lJbcEt5UZCNQJJH0",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Læs PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Læs PDF": {
+      "main": [
+        [
+          {
+            "node": "Udtræk tekst fra PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Udtræk tekst fra PDF": {
+      "main": [
+        [
+          {
+            "node": "Opdel i stykker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Opdel i stykker": {
+      "main": [
+        [
+          {
+            "node": "Grupér pr. paragraf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grupér pr. paragraf": {
+      "main": [
+        [
+          {
+            "node": "Byg struktur-Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg struktur-Cypher": {
+      "main": [
+        [
+          {
+            "node": "Gem struktur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gem struktur": {
+      "main": [
+        [
+          {
+            "node": "Byg henvisninger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg henvisninger": {
+      "main": [
+        [
+          {
+            "node": "Gem henvisninger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gem henvisninger": {
+      "main": [
+        [
+          {
+            "node": "Byg AI-prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg AI-prompt": {
+      "main": [
+        [
+          {
+            "node": "Test: kun 5 paragraffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test: kun 5 paragraffer": {
+      "main": [
+        [
+          {
+            "node": "AI: skriv Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: skriv Cypher": {
+      "main": [
+        [
+          {
+            "node": "Valider Cypher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valider Cypher": {
+      "main": [
+        [
+          {
+            "node": "Gem viden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gem viden": {
+      "main": [
+        [
+          {
+            "node": "Opsummering",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Haiku": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: skriv Cypher",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19ff631b-c5ad-475d-808d-8c7e90612ab5",
+  "meta": {
+    "instanceId": "26121b5dcd0eadf7704ef232a55b5c9001e072aa1b762fa54d9c6c4e7a986594"
+  },
+  "nodeGroups": [],
+  "id": "QgVvZU2qJvPbXGj1",
+  "tags": []
+}

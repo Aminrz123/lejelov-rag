@@ -1,0 +1,175 @@
+{
+  "name": "04 Grafsøgning (tool)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "soegetype",
+              "type": "string"
+            },
+            {
+              "name": "vaerdi",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "v1",
+      "name": "Kaldt af agenten",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "v0",
+      "name": "Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "soegetype",
+              "value": "paragraf",
+              "type": "string"
+            },
+            {
+              "id": "t2",
+              "name": "vaerdi",
+              "value": "59",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "v2",
+      "name": "Testsøgning",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Bygger den rigtige graf-query ud fra søgetypen: paragraf, emne eller part\nconst type = String($json.soegetype || '').trim().toLowerCase();\nconst vaerdi = String($json.vaerdi || '').trim();\n\nconst QUERIES = {\n  paragraf: `\nMATCH (p:Paragraf {nr: $vaerdi})\nOPTIONAL MATCH (k:Kapitel)-[:HAR_PARAGRAF]->(p)\nRETURN p.nr AS nr, p.overskrift AS overskrift, p.kilde AS kilde,\n  k.nr AS kapitel, k.titel AS kapitel_titel,\n  COLLECT { MATCH (p)-[:HAR_STYKKE]->(s:Stykke) RETURN {stk: s.stk, tekst: s.tekst} ORDER BY s.stk } AS stykker,\n  COLLECT { MATCH (p)-[:HANDLER_OM]->(e:Emne) RETURN e.navn } AS emner,\n  COLLECT { MATCH (p)-[r:GIVER_RET]->(a:Part) RETURN a.navn + ': ' + coalesce(r.beskrivelse, '') } AS rettigheder,\n  COLLECT { MATCH (p)-[r:PAALAEGGER_PLIGT]->(a:Part) RETURN a.navn + ': ' + coalesce(r.beskrivelse, '') } AS pligter,\n  COLLECT { MATCH (p)-[:FASTSAETTER_FRIST]->(f:Frist) RETURN coalesce(f.varighed, '') + ' – ' + coalesce(f.beskrivelse, '') } AS frister,\n  COLLECT { MATCH (p)-[:DEFINERER]->(b:Begreb) RETURN b.navn + ': ' + coalesce(b.definition, '') } AS begreber,\n  COLLECT { MATCH (p)-[:HENVISER_TIL]->(q:Paragraf) RETURN q.nr } AS henviser_til,\n  COLLECT { MATCH (q:Paragraf)-[:HENVISER_TIL]->(p) RETURN q.nr } AS henvist_fra`,\n\n  emne: `\nMATCH (e:Emne)<-[:HANDLER_OM]-(p:Paragraf)\nWHERE toLower(e.navn) CONTAINS toLower($vaerdi)\nRETURN e.navn AS emne, p.nr AS nr, p.overskrift AS overskrift, p.kilde AS kilde,\n  COLLECT { MATCH (p)-[r:GIVER_RET]->(a:Part) RETURN a.navn + ': ' + coalesce(r.beskrivelse, '') } AS rettigheder,\n  COLLECT { MATCH (p)-[r:PAALAEGGER_PLIGT]->(a:Part) RETURN a.navn + ': ' + coalesce(r.beskrivelse, '') } AS pligter,\n  COLLECT { MATCH (p)-[:FASTSAETTER_FRIST]->(f:Frist) RETURN coalesce(f.varighed, '') + ' – ' + coalesce(f.beskrivelse, '') } AS frister\nORDER BY toInteger(split(p.nr, ' ')[0]), p.nr`,\n\n  part: `\nMATCH (p:Paragraf)-[r:GIVER_RET|PAALAEGGER_PLIGT]->(a:Part)\nWHERE toLower(a.navn) = toLower($vaerdi)\nRETURN a.navn AS part, type(r) AS type, p.nr AS nr, p.overskrift AS overskrift,\n  r.beskrivelse AS beskrivelse, p.kilde AS kilde\nORDER BY type, toInteger(split(p.nr, ' ')[0]), p.nr`,\n};\n\nif (!QUERIES[type]) {\n  return { json: { fejl: `Ukendt soegetype \"${type}\". Brug \"paragraf\", \"emne\" eller \"part\".` } };\n}\n\n// \"§ 59\" → \"59\", \"59a\" → \"59 a\"\nlet v = vaerdi;\nif (type === 'paragraf') {\n  const m = vaerdi.replace(/§/g, '').trim().toLowerCase().match(/^(\\d+)\\s*([a-z])?$/);\n  v = m ? m[1] + (m[2] ? ' ' + m[2] : '') : vaerdi;\n}\n\nreturn { json: { soegetype: type, vaerdi: v, payload: { statement: QUERIES[type], parameters: { vaerdi: v } } } };\n"
+      },
+      "id": "g3",
+      "name": "Byg graf-query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/lejeloven/query/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload || { statement: 'RETURN 1 AS ingen' }) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth"
+      },
+      "id": "g4",
+      "name": "Grafsøgning i Neo4j",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gør grafens svar læsbart for agenten, med kilde på hvert fund\nconst { soegetype, vaerdi, fejl } = $('Byg graf-query').first().json;\nif (fejl) return [{ json: { resultat: fejl } }];\n\nconst svar = $input.first().json;\nif (svar.errors?.length || svar.error) {\n  return [{ json: { resultat: 'Fejl fra Neo4j: ' + JSON.stringify(svar.errors || svar.error).slice(0, 300) } }];\n}\nconst { fields, values } = svar.data;\nconst rows = values.map(v => Object.fromEntries(fields.map((f, i) => [f, v[i]])));\nconst liste = (titel, arr) => (arr && arr.length ? `${titel}:\\n${arr.map(x => '- ' + x).join('\\n')}` : null);\n\nif (!rows.length) {\n  const hjælp = {\n    paragraf: 'Paragraffen findes ikke. Lejeloven har §§ 1-213.',\n    emne: 'Ingen paragraffer om det emne. Gyldige emner er fx: Depositum og forudbetalt leje, Opsigelse, Fraflytning, Vedligeholdelse, Mangler, Fremleje og bytte, Husleje og lejefastsættelse.',\n    part: 'Ukendt part. Brug: Lejer, Udlejer, Huslejenævn, Boligret, Kommune eller Beboerrepræsentation.',\n  };\n  return [{ json: { resultat: `Intet fundet for ${soegetype} \"${vaerdi}\". ${hjælp[soegetype]}` } }];\n}\n\nlet resultat;\nif (soegetype === 'paragraf') {\n  const r = rows[0];\n  const stykker = (r.stykker || [])\n    .map(s => s.properties || s)\n    .map(s => `Stk. ${s.stk}. ${s.tekst}`).join('\\n');\n  resultat = [\n    `Lejeloven § ${r.nr}${r.overskrift ? ' – ' + r.overskrift : ''} (kapitel ${r.kapitel}: ${r.kapitel_titel})`,\n    stykker,\n    liste('Emner', r.emner),\n    liste('Rettigheder', r.rettigheder),\n    liste('Pligter', r.pligter),\n    liste('Frister', r.frister),\n    liste('Begreber', r.begreber),\n    r.henviser_til?.length ? `Henviser til: ${r.henviser_til.map(n => '§ ' + n).join(', ')}` : null,\n    r.henvist_fra?.length ? `Henvist til fra: ${r.henvist_fra.map(n => '§ ' + n).join(', ')}` : null,\n    `Kilde: ${r.kilde}`,\n  ].filter(Boolean).join('\\n\\n');\n} else if (soegetype === 'emne') {\n  resultat = `${rows.length} paragraffer om \"${rows[0].emne}\":\\n\\n` + rows.map(r => [\n    `§ ${r.nr}${r.overskrift ? ' – ' + r.overskrift : ''}`,\n    ...r.rettigheder.map(x => '  Ret: ' + x),\n    ...r.pligter.map(x => '  Pligt: ' + x),\n    ...r.frister.map(x => '  Frist: ' + x),\n  ].join('\\n')).join('\\n') + `\\n\\nKilde: ${rows[0].kilde}`;\n} else {\n  const ret = rows.filter(r => r.type === 'GIVER_RET');\n  const pligt = rows.filter(r => r.type === 'PAALAEGGER_PLIGT');\n  const linje = r => `- § ${r.nr}: ${r.beskrivelse}`;\n  resultat = [\n    `${rows[0].part} i lejeloven`,\n    ret.length ? `Rettigheder (${ret.length}):\\n${ret.map(linje).join('\\n')}` : null,\n    pligt.length ? `Pligter (${pligt.length}):\\n${pligt.map(linje).join('\\n')}` : null,\n    `Kilde: ${rows[0].kilde}`,\n  ].filter(Boolean).join('\\n\\n');\n}\n\nreturn [{ json: { resultat, antal_fund: rows.length } }];\n"
+      },
+      "id": "g5",
+      "name": "Formatér resultat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Kaldt af agenten": {
+      "main": [
+        [
+          {
+            "node": "Byg graf-query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test": {
+      "main": [
+        [
+          {
+            "node": "Testsøgning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Testsøgning": {
+      "main": [
+        [
+          {
+            "node": "Byg graf-query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Byg graf-query": {
+      "main": [
+        [
+          {
+            "node": "Grafsøgning i Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grafsøgning i Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Formatér resultat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

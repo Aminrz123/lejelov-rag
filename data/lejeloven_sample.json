@@ -1,0 +1,223 @@
+[
+  {
+    "id": "§1-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Anvendelsesområde",
+    "paragraf": "1",
+    "stk": 1,
+    "tekst": "Loven gælder for leje, herunder fremleje, af hus eller rum, uanset om lejeren er en person eller en virksomhed m.v. (juridisk person).",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§1-stk2",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Anvendelsesområde",
+    "paragraf": "1",
+    "stk": 2,
+    "tekst": "Loven gælder, selv om lejen skal betales med andet end penge, herunder ved arbejde.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§1-stk3",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Anvendelsesområde",
+    "paragraf": "1",
+    "stk": 3,
+    "tekst": "Bortset fra § 17 gælder loven dog ikke for aftaler om leje af bolig med fuld kost, for aftaler mellem et hotel og dets gæster og for lejeforhold om beboelseslejligheder og andre beboelsesrum, herunder sommerhuse, kolonihavehuse og andre fritidsboliger, som er udlejet til ferie- og fritidsmæssige formål.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "17"
+    ]
+  },
+  {
+    "id": "§1-stk4",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Anvendelsesområde",
+    "paragraf": "1",
+    "stk": 4,
+    "tekst": "Loven gælder endvidere for leje af ustøttede private plejeboliger, jf. dog § 1, stk. 4, i erhvervslejeloven. §§ 7 og 9, kapitel 3, § 53, stk. 2, §§ 105-107, 109, 113, 119-121, 123, § 127, stk. 3, § 135 og kapitel 24 gælder dog ikke for ustøttede private plejeboliger.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "7",
+      "53",
+      "105",
+      "106",
+      "107",
+      "127",
+      "135"
+    ]
+  },
+  {
+    "id": "§1-stk5",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Anvendelsesområde",
+    "paragraf": "1",
+    "stk": 5,
+    "tekst": "Ustøttede private plejeboliger, jf. stk. 4, er tidligere institutionspladser på plejehjem og i beskyttede boliger, der den 31. december 2002 var omfattet af § 140 i lov om social service, og som kommunalbestyrelsen har omdannet til ustøttede private plejeboliger.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "140 i"
+    ]
+  },
+  {
+    "id": "§2-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "2",
+    "stk": 1,
+    "tekst": "Loven gælder ikke, i det omfang lejeforholdet er omfattet af særlige regler i anden lovgivning.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§2-stk2",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "2",
+    "stk": 2,
+    "tekst": "Loven gælder ikke, i det omfang lejeforholdet er et led i et ansættelsesforhold under staten eller under en institution, hvortil staten yder tilskud, når løn- og andre ansættelsesvilkår er godkendt af staten. Loven gælder heller ikke lejeforhold, der er et led i et ansættelsesforhold under en region eller en kommune eller under en selvejende institution, hvormed en region eller en kommune har indgået overenskomst om institutionens drift, når løn- og andre ansættelsesvilkår er godkendt af Kommunernes Lønningsnævn eller er aftalt med eller fastsat af Regionernes Lønnings- og Takstnævn.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§2-stk3",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "2",
+    "stk": 3,
+    "tekst": "Bortset fra § 196, stk. 4, gælder loven ikke for leje af boliger, der er omfattet af § 1 i lov om leje af almene boliger.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "1 i",
+      "196"
+    ]
+  },
+  {
+    "id": "§2-stk4",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "2",
+    "stk": 4,
+    "tekst": "Loven gælder ikke for lejeforhold om lokaler, der udlejes til brug for drift af friplejeboliger, jf. § 11, stk. 1, i lov om friplejeboliger.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "11"
+    ]
+  },
+  {
+    "id": "§2-stk5",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "2",
+    "stk": 5,
+    "tekst": "Loven gælder ikke for lejeforhold, som er omfattet af erhvervslejeloven.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§3-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": null,
+    "paragraf": "3",
+    "stk": 1,
+    "tekst": "Lovens regler om beboelseslejligheder finder også anvendelse, når en lejlighed er udlejet tillige med lokaliteter til andet end beboelse. Bortset fra § 129, stk. 4, gælder kapitel 3-5 og §§ 105-107 og 127-130 dog ikke for lokaler omfattet af § 1, stk. 2, i erhvervslejeloven.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "1",
+      "105",
+      "106",
+      "107",
+      "129"
+    ]
+  },
+  {
+    "id": "§4-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Regulerede kommuner",
+    "paragraf": "4",
+    "stk": 1,
+    "tekst": "Ved regulerede kommuner forstås kommuner, hvor de hidtidige regler om huslejeregulering i kapitel II-V i lov om midlertidig regulering af boligforholdene, jf. lovbekendtgørelse nr. 929 af 4. september 2019 med senere ændringer, fandt anvendelse. Ved regulerede kommuner forstås endvidere kommuner, hvor kommunalbestyrelsen har besluttet, at kommunen skal være reguleret, jf. stk. 2.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§4-stk2",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Regulerede kommuner",
+    "paragraf": "4",
+    "stk": 2,
+    "tekst": "Kommunalbestyrelsen kan under hensyn til boligforholdene bestemme, at kommunen skal være reguleret. I regulerede kommuner kan kommunalbestyrelsen beslutte, at kommunen ikke længere skal være reguleret.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": []
+  },
+  {
+    "id": "§5-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Bekendtgørelse af kommunalbestyrelsens beslutninger",
+    "paragraf": "5",
+    "stk": 1,
+    "tekst": "De beslutninger, som kommunalbestyrelsen træffer efter § 4, stk. 2, skal bekendtgøres i Statstidende og i øvrigt på den måde, der er sædvanlig i kommunen. Er andet ikke udtrykkeligt fastsat i beslutningen, får den virkning fra og med datoen på det nummer af Statstidende, hvori den er bekendtgjort.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "4"
+    ]
+  },
+  {
+    "id": "§6-stk1",
+    "lov": "Lejeloven",
+    "kapitel": "1",
+    "kapitel_titel": "Anvendelsesområde m.v.",
+    "overskrift": "Huslejeregulering m.v. i regulerede kommuner",
+    "paragraf": "6",
+    "stk": 1,
+    "tekst": "§ 9, kapitel 3, §§ 62, 105-107, 109 og 113, § 115, stk. 2, §§ 119-123, § 127, stk. 3, og § 135 gælder alene for lejeforhold i ejendomme, der er beliggende i regulerede kommuner, jf. dog stk. 2-4 og § 7, stk. 3. §§ 42-45, 49-51 og 53 gælder ikke for lejeforhold i ejendomme omfattet af 1. pkt.",
+    "kilde": "https://www.retsinformation.dk/eli/lta/2022/341",
+    "henviser_til": [
+      "7",
+      "9",
+      "42",
+      "43",
+      "44",
+      "45",
+      "62",
+      "115",
+      "119",
+      "120",
+      "121",
+      "122",
+      "123",
+      "127",
+      "135"
+    ]
+  }
+]

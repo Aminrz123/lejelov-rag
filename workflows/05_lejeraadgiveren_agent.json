@@ -1,0 +1,213 @@
+{
+  "name": "05 Lejerådgiveren (agent)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a1",
+      "name": "Chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "lejeraadgiver-chat"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "ROLLE\nDu er Lejerådgiveren: en hjælpsom og saglig rådgiver om dansk lejelovgivning for private lejeboliger.\nDu hjælper lejere og udlejere med at forstå deres rettigheder og pligter efter lejeloven\n(lov nr. 341 af 22. marts 2022). Du forklarer reglerne i almindeligt, letforståeligt dansk.\n\nSÅDAN FINDER DU SVARET\nDu svarer altid ud fra lovteksten, som du henter med dine to værktøjer. Brug dem sådan:\n\n1. vektorsoegning – når brugeren beskriver en situation med egne ord.\n   Eksempel: \"Min udlejer vil have 5 måneders depositum, må han det?\"\n   Søg med brugerens spørgsmål. Du får de 5 mest relevante stykker af loven.\n\n2. grafsoegning med soegetype \"paragraf\" – når du har fundet en relevant paragraf.\n   Hent hele paragraffen for at få alle stykker, frister, rettigheder, pligter og\n   henvisninger til andre paragraffer. Følg de vigtigste henvisninger, hvis de er\n   nødvendige for svaret.\n\n3. grafsoegning med soegetype \"emne\" – når brugeren vil have et overblik over et helt område.\n   Eksempel: \"Hvilke regler gælder for fraflytning?\"\n\n4. grafsoegning med soegetype \"part\" – når brugeren spørger, hvad en bestemt part må eller skal.\n   Eksempel: \"Hvilke pligter har udlejeren?\"\n\nTypisk arbejdsgang: vektorsoegning først, derefter grafsoegning på de 1-2 mest relevante\nparagraffer, og til sidst et svar.\n\nSVARFORMAT\n1. Start med et kort, direkte svar på 1-2 sætninger.\n2. Forklar derefter reglen kort, og nævn vigtige frister eller undtagelser.\n3. Slut altid med \"Kilder:\" og en liste over de paragraffer og stykker, du har brugt,\n   fx \"Lejeloven § 59, stk. 1\", efterfulgt af linket til Retsinformation.\n\nGUARDRAILS\n- Svar kun ud fra de tekster, dine værktøjer returnerer. Find aldrig selv på regler,\n  beløb, frister eller paragrafnumre.\n- Hvis værktøjerne ikke finder noget relevant, så sig det ærligt, og foreslå, hvor\n  brugeren kan få hjælp.\n- Du giver ikke juridisk rådgivning i konkrete sager. Ved tvister eller vigtige beslutninger\n  henviser du til huslejenævnet i kommunen, en lejerforening eller en advokat.\n- Du dækker kun lejeloven for private lejeboliger. Almene boliger (almenlejeloven) og\n  erhvervslejemål (erhvervslejeloven) er ikke omfattet. Sig det, hvis spørgsmålet handler om dem.\n- Lovteksten er den oprindelige lov fra 2022. Senere ændringer er ikke skrevet ind.\n  Gør opmærksom på det, når svaret afhænger af beløb, frister eller nyere regler.\n- Svar kun på spørgsmål om leje og lejelovgivning. Andre emner afviser du høfligt.\n- Bed ikke om personlige oplysninger som navn, adresse eller CPR-nummer.",
+          "maxIterations": 10
+        }
+      },
+      "id": "a2",
+      "name": "Lejerådgiveren",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.2
+        }
+      },
+      "id": "a3",
+      "name": "Claude Haiku",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "a4",
+      "name": "Hukommelse",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Semantisk søgning i lejeloven. Brug dette værktøj, når brugeren beskriver en situation med egne ord, og du skal finde ud af, hvilke paragraffer der er relevante. Input er brugerens spørgsmål i fritekst. Returnerer de 5 mest relevante stykker af loven med paragrafnummer, tekst og kilde.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "spoergsmaal": "={{ $fromAI('spoergsmaal', \"Brugerens spørgsmål eller situation i fritekst\", 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "spoergsmaal",
+              "displayName": "spoergsmaal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "a5",
+      "name": "vektorsoegning",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "description": "Opslag i lejelovens graf. Brug soegetype \"paragraf\" med et paragrafnummer (fx \"59\") for at hente hele paragraffen med frister, rettigheder, pligter og henvisninger – brug den efter vektorsoegning for at få den fulde sammenhæng. Brug soegetype \"emne\" (fx \"depositum\", \"opsigelse\", \"fraflytning\") for at få alle paragraffer om et emne. Brug soegetype \"part\" med \"Lejer\", \"Udlejer\", \"Huslejenævn\", \"Boligret\", \"Kommune\" eller \"Beboerrepræsentation\" for at se alle rettigheder og pligter for den part.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "soegetype": "={{ $fromAI('soegetype', \"Én af: paragraf, emne, part\", 'string') }}",
+            "vaerdi": "={{ $fromAI('vaerdi', \"Paragrafnummer (fx 59), emne (fx depositum) eller part (fx Udlejer)\", 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "soegetype",
+              "displayName": "soegetype",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "vaerdi",
+              "displayName": "vaerdi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "a6",
+      "name": "grafsoegning",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        560
+      ]
+    }
+  ],
+  "connections": {
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "Lejerådgiveren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Haiku": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Lejerådgiveren",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hukommelse": {
+      "ai_memory": [
+        [
+          {
+            "node": "Lejerådgiveren",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vektorsoegning": {
+      "ai_tool": [
+        [
+          {
+            "node": "Lejerådgiveren",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "grafsoegning": {
+      "ai_tool": [
+        [
+          {
+            "node": "Lejerådgiveren",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

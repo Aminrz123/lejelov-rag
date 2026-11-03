@@ -1,0 +1,24 @@
+agent
+=====
+
+Her har jeg samlet alt om min agent, Lejerådgiveren. Opgaven siger, at man skal
+aflevere agentens opsætning som tekstfiler, så underviseren kan se, hvad jeg har lavet,
+uden at skulle ind i min n8n.
+
+Det ligger der:
+
+instruktioner.txt
+  Det er den tekst, jeg har skrevet til agenten. Den fortæller agenten, hvem den er
+  (en rådgiver om lejeloven), hvordan den skal bruge sine to værktøjer, hvordan svaret
+  skal se ud, og hvad den ikke må (fx finde på regler eller give juridisk rådgivning).
+  Jeg har kopieret den ind i "System Message" i agenten i workflow 05.
+
+tools.txt
+  Her har jeg beskrevet de to værktøjer agenten kan bruge: vektorsøgning og grafsøgning.
+  For hvert værktøj står der, hvad det gør, hvad man skal give det, og hvornår agenten
+  skal bruge det. Beskrivelserne er også sat ind i tool-noderne i n8n.
+
+model.txt
+  Hvilke AI-modeller jeg bruger, og hvorfor jeg har valgt dem.
+
+Hvis jeg ændrer noget i agenten inde i n8n, retter jeg også filerne her, så de passer.

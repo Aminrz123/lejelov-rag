@@ -1,0 +1,50 @@
+Eksempel på prompt fra workflow 02 (Graf-ingestion)
+====================================================
+
+Denne prompt bygges automatisk af noden "Byg AI-prompt" for hver af lovens 213 paragraffer
+og sendes til Claude Haiku i noden "AI: skriv Cypher". Svaret (Cypher) tjekkes af noden
+"Valider Cypher", før det gemmes i Neo4j.
+
+Eksemplet herunder er prompten for § 5.
+
+----------------------------------------------------
+
+Du er ekspert i dansk lejeret og i Neo4j Cypher.
+Du får én paragraf fra lejeloven. Skriv ÉN Cypher-sætning, der tilføjer viden om paragraffen til en graf.
+
+REGLER
+1. Start præcis med: MATCH (p:Paragraf {nr: "5"})
+2. Efter MATCH må du kun bruge MERGE og SET. Ingen CREATE, DELETE, REMOVE, DETACH, DROP, CALL, LOAD, UNWIND eller FOREACH.
+3. Tilladte noder:
+   - (:Emne {navn})
+   - (:Part {navn})
+   - (:Frist {id}) med SET beskrivelse og varighed
+   - (:Begreb {navn}) med SET definition
+4. Tilladte relationer, altid fra p:
+   - (p)-[:HANDLER_OM]->(Emne)                        1-2 emner, altid mindst ét
+   - (p)-[:GIVER_RET {beskrivelse: "..."}]->(Part)     når paragraffen giver en part en ret
+   - (p)-[:PAALAEGGER_PLIGT {beskrivelse: "..."}]->(Part)  når paragraffen pålægger en part en pligt
+   - (p)-[:FASTSAETTER_FRIST]->(Frist)                kun for konkrete frister/varsler (fx "14 dage", "3 måneder")
+   - (p)-[:DEFINERER]->(Begreb)                       kun hvis paragraffen definerer et begreb
+5. Emne.navn SKAL være præcis én af: "Anvendelsesområde", "Lejeaftalen", "Husleje og lejefastsættelse", "Lejeforhøjelse og lejenedsættelse", "Depositum og forudbetalt leje", "Betaling af leje", "Forbrug (varme, vand, el)", "Indflytning", "Mangler", "Vedligeholdelse", "Forbedringer", "Lejerens brug og husorden", "Fremleje og bytte", "Opsigelse", "Ophævelse", "Fraflytning", "Beboerrepræsentation", "Huslejenævn og boligret", "Tilbudspligt", "Straf", "Fravigelighed"
+6. Part.navn SKAL være præcis én af: "Lejer", "Udlejer", "Huslejenævn", "Boligret", "Kommune", "Beboerrepræsentation"
+7. Frist.id skal være "5-1", "5-2" osv.
+8. Brug dobbelte anførselstegn om al tekst, og brug aldrig anførselstegn eller backslash inde i teksten.
+9. Giv hver variabel et unikt navn (e1, e2, a1, f1, b1 ...).
+10. Beskrivelser og definitioner skal være korte (højst 15 ord) og på dansk.
+11. Svar KUN med Cypher. Ingen forklaring, ingen markdown, ingen semikolon.
+
+EKSEMPEL (for en anden paragraf)
+MATCH (p:Paragraf {nr: "999"})
+MERGE (e1:Emne {navn: "Depositum og forudbetalt leje"})
+MERGE (p)-[:HANDLER_OM]->(e1)
+MERGE (a1:Part {navn: "Udlejer"})
+MERGE (p)-[:GIVER_RET {beskrivelse: "Kan kræve depositum på højst 3 måneders leje"}]->(a1)
+MERGE (f1:Frist {id: "999-1"})
+SET f1.beskrivelse = "Depositum højst svarende til leje for", f1.varighed = "3 måneder"
+MERGE (p)-[:FASTSAETTER_FRIST]->(f1)
+
+PARAGRAFFEN
+Kapitel 1: Anvendelsesområde m.v.
+Overskrift: Bekendtgørelse af kommunalbestyrelsens beslutninger
+§ 5. De beslutninger, som kommunalbestyrelsen træffer efter § 4, stk. 2, skal bekendtgøres i Statstidende og i øvrigt på den måde, der er sædvanlig i kommunen. Er andet ikke udtrykkeligt fastsat i beslutningen, får den virkning fra og med datoen på det nummer af Statstidende, hvori den er bekendtgjort.
